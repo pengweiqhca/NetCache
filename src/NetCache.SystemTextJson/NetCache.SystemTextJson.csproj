@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="4.*" />
+
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
+  </ItemGroup>
+
+</Project>

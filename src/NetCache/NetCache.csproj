@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+    <TargetFrameworks>net45;net461;netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Resources.NeutralResourcesLanguage">
+      <_Parameter1>en-us</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NetCache.Proxies</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NetCache.Tests</_Parameter1>
+    </AssemblyAttribute>
+
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.*" Condition="'$(TargetFramework)' != 'net45' AND '$(TargetFramework)' != 'netstandard2.1'" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="1.*" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.3.4" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.*" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
+    <ProjectReference Include="..\NetCache.DistributedLock\NetCache.DistributedLock.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="FuncHelper.cs">
+      <DependentUpon>FuncHelper.tt</DependentUpon>
+    </Compile>
+    <Compile Update="FuncHelper.generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>FuncHelper.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Res.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Res.resx</DependentUpon>
+    </Compile>
+
+    <EmbeddedResource Update="Res.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Res.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    <None Update="FuncHelper.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>FuncHelper.generated.cs</LastGenOutput>
+    </None>
+    <None Update="FuncHelper.Class.tt">
+      <DependentUpon>FuncHelper.tt</DependentUpon>
+    </None>
+    <Code Update="FuncHelper.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>FuncHelper.tt</DependentUpon>
+    </Code>
+  </ItemGroup>
+
+</Project>

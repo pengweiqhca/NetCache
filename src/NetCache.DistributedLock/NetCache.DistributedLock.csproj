@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net461;netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Resources.NeutralResourcesLanguage">
+      <_Parameter1>en-us</_Parameter1>
+    </AssemblyAttribute>
+
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Res.Designer.cs">
+      <DependentUpon>Res.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+
+    <EmbeddedResource Update="Res.resx">
+      <LastGenOutput>Res.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

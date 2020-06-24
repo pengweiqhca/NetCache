@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Tools" Version="2.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <None Remove="MyContracts.proto" />
+    <Protobuf Include="MyContracts.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.*" />
+    <ProjectReference Include="..\..\src\NetCache.GoogleProtobuf\NetCache.GoogleProtobuf.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.ProtobufNet\NetCache.ProtobufNet.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" Condition="'$(TargetFramework)' != 'net46'" />
+  </ItemGroup>
+
+</Project>

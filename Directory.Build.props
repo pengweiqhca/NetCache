@@ -1,0 +1,20 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\NetCache.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <Deterministic>true</Deterministic>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RumtimeFrameworks>netcoreapp3.1;netcoreapp2.1;net471;net46;</RumtimeFrameworks>
+    <MicrosoftExtensionsPackageVersion>3.1.5</MicrosoftExtensionsPackageVersion>
+    <NoWarn>$(NoWarn);1591;CA1716</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nullable" Version="1.*" PrivateAssets="All" Condition="'$(TargetFramework)' != 'netstandard2.1' AND '$(TargetFramework)' != 'netcoreapp3.1'" />
+    <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.*" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.*" PrivateAssets="All" Condition="'$(OS)' != 'Windows_NT'" />
+  </ItemGroup>
+
+</Project>

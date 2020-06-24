@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <SignAssembly>false</SignAssembly>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../test/NetCache.Tests/TestHelpers/Int64Cache.cs" />
+
+    <ProjectReference Include="..\..\src\NetCache\NetCache.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.MicrosoftExtensionsCaching\NetCache.MicrosoftExtensionsCaching.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.*" />
+
+    <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsPackageVersion)" />
+
+    <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" />
+  </ItemGroup>
+
+</Project>

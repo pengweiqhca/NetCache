@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">
+    <Compile Remove="AppDomainIsolated.cs" />
+    <Compile Remove="LockTimeoutTest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetCache.CSRedis\NetCache.CSRedis.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.MicrosoftExtensionsCaching\NetCache.MicrosoftExtensionsCaching.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.StackExchangeRedis\NetCache.StackExchangeRedis.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.*" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Redis" Version="1.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="$(MicrosoftExtensionsPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsPackageVersion)" />
+  </ItemGroup>
+
+</Project>

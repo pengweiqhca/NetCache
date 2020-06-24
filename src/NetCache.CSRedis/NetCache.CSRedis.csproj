@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSRedisCore" Version="3.6.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.*" />
+
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
+    <ProjectReference Include="..\NetCache.DistributedLock\NetCache.DistributedLock.csproj" />
+  </ItemGroup>
+
+</Project>

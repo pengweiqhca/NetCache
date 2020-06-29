@@ -9,6 +9,7 @@ namespace NetCache
     internal static partial class FuncHelper
     {
         private static readonly IDictionary<FuncType, MethodInfo> WrapMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
+        private static readonly IDictionary<FuncType, MethodInfo> WrapAsyncMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
 
         private struct FuncType
         {
@@ -51,7 +52,7 @@ namespace NetCache
         static FuncHelper()
         {
             foreach (var method in typeof(FuncHelper).GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.Name == nameof(Wrap)))
+                .Where(m => m.Name.StartsWith(nameof(Wrap), StringComparison.Ordinal)))
             {
                 var args = method.GetParameters()[0].ParameterType.GenericTypeArguments;
                 Type? arg1 = null, arg2 = null, arg3 = null, returnArg = null;
@@ -66,7 +67,7 @@ namespace NetCache
                 if (args.Length > 2) arg2 = args[1].IsGenericParameter ? typeof(object) : args[1];
                 if (args.Length > 3) arg3 = args[2].IsGenericParameter ? typeof(object) : args[2];
 
-                WrapMethods[new FuncType
+                (method.Name == nameof(Wrap) ? WrapMethods : WrapAsyncMethods)[new FuncType
                 {
                     Arg1 = arg1,
                     Arg2 = arg2,
@@ -78,6 +79,15 @@ namespace NetCache
 
         public static MethodInfo GetWrapMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
             WrapMethods[new FuncType
+            {
+                Arg1 = arg1,
+                Arg2 = arg2,
+                Arg3 = arg3,
+                ReturnArg = returnArg
+            }];
+
+        public static MethodInfo GetWrapAsyncMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
+            WrapAsyncMethods[new FuncType
             {
                 Arg1 = arg1,
                 Arg2 = arg2,

@@ -65,10 +65,10 @@ namespace NetCache
                 switch (method.Operation)
                 {
                     case CacheOperation.Get:
-                        BuildGet(method, il);
+                        BuildGet(method, il, cacheType.DefaultTtl);
                         break;
                     case CacheOperation.Set:
-                        BuildSet(method, il);
+                        BuildSet(method, il, cacheType.DefaultTtl);
                         break;
                     case CacheOperation.Remove:
                         BuildRemove(method, il);
@@ -139,7 +139,7 @@ namespace NetCache
             ctor.Emit(OpCodes.Ret);
         }
 
-        private static void BuildGet(CacheMethod method, ILGenerator il)
+        private static void BuildGet(CacheMethod method, ILGenerator il, int defaultTtl)
         {
             var keyType = method.Method.GetParameters()[0].ParameterType;
 
@@ -155,7 +155,7 @@ namespace NetCache
                 BuildFunc(method, il, keyType, method.ValueType!);
 
                 var locals = 0;
-                if (LdTtl(method, il, locals)) locals++;
+                if (LdTtl(method, il, locals, defaultTtl)) locals++;
                 if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
                 BuildCacheMethod(method, locals, il, nameof(CacheHelper.GetOrSet), nameof(CacheHelper.GetOrSetAsync), keyType, method.ValueType!);
@@ -199,22 +199,24 @@ namespace NetCache
 
             if (args[args.Length - 1].IsGenericType)
             {
-                var type = args[args.Length - 1].GetGenericArguments()[0];
+                var type = args[args.Length - 1].GetGenericTypeDefinition();
 
-                if (type == typeof(Task<>)) returnArg = typeof(Task<>);
-                else if (type == typeof(ValueTask<>)) returnArg = typeof(ValueTask<>);
+                if (type == typeof(Task<>) || type == typeof(ValueTask<>)) returnArg = type;
             }
 
-            if (arg1 != typeof(object) || arg2 != typeof(TimeSpan) || arg3 != typeof(CancellationToken))
-                il.Emit(OpCodes.Call, FuncHelper.GetWrapMethod(arg1, arg2, arg3, returnArg).MakeGenericMethod(keyType, method.ValueType));
+            if (arg1 != typeof(object) || arg2 != typeof(TimeSpan) || arg3 != typeof(CancellationToken) || method.AsyncType != null && returnArg != typeof(ValueTask<>))
+                il.Emit(OpCodes.Call, (method.AsyncType == null
+                        ? FuncHelper.GetWrapMethod(arg1, arg2, arg3, returnArg)
+                        : FuncHelper.GetWrapAsyncMethod(arg1, arg2, arg3, returnArg))
+                    .MakeGenericMethod(keyType, method.ValueType));
         }
 
-        private static void BuildSet(CacheMethod method, ILGenerator il)
+        private static void BuildSet(CacheMethod method, ILGenerator il, int defaultTtl)
         {
             Ldarg(il, method.Value + 1);
 
             var locals = 0;
-            if (LdTtl(method, il, locals)) locals++;
+            if (LdTtl(method, il, locals, defaultTtl)) locals++;
 
             if (method.When > 0) Ldarg(il, method.When + 1);
             else il.Emit(OpCodes.Ldc_I4_0);
@@ -298,70 +300,79 @@ namespace NetCache
                 il.Emit(OpCodes.Stloc, index);
         }
 
-        private static bool LdTtl(CacheMethod method, ILGenerator il, int locals)
+        private static bool LdTtl(CacheMethod method, ILGenerator il, int locals, int defaultTtl)
         {
-            if (method.Ttl < 1) return InitValue<TimeSpan>(method.Ttl, il, locals);
-
-            var type = method.Method.GetParameters()[method.Ttl].ParameterType;
-            var rawType = Nullable.GetUnderlyingType(type);
-
-            if (rawType == null) Ldarg(il, method.Ttl + 1);
-            else il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
-
-            if (type == typeof(DateTime) ||
-                type == typeof(DateTimeOffset))
+            if (method.Ttl < 1)
             {
-                il.Emit(OpCodes.Call, type.GetProperty(nameof(DateTime.Now)).GetMethod);
-                il.Emit(OpCodes.Call, type.GetMethod("op_Subtraction", new[] { type, type }));
+                if (defaultTtl < 1) return InitValue<TimeSpan>(method.Ttl, il, locals);
 
-                return false;
+                il.Emit(OpCodes.Ldc_R8, (double)defaultTtl);
             }
-
-            if (rawType == typeof(DateTime) ||
-                rawType == typeof(DateTimeOffset))
+            else
             {
-                var falseLabel = il.DefineLabel();
-                var endLabel = il.DefineLabel();
+                var type = method.Method.GetParameters()[method.Ttl].ParameterType;
+                var rawType = Nullable.GetUnderlyingType(type);
 
-                il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.HasValue)).GetMethod);
-                il.Emit(OpCodes.Brfalse_S, falseLabel);
+                if (rawType == null) Ldarg(il, method.Ttl + 1);
+                else il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
 
-                il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
-                il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.Value)).GetMethod);
+                if (type == typeof(DateTime) ||
+                    type == typeof(DateTimeOffset))
+                {
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(DateTime.Now)).GetMethod);
+                    il.Emit(OpCodes.Call, type.GetMethod("op_Subtraction", new[] { type, type }));
 
-                il.Emit(OpCodes.Call, rawType.GetProperty(nameof(DateTime.Now)).GetMethod);
-                il.Emit(OpCodes.Call, rawType.GetMethod("op_Subtraction", new[] { rawType, rawType }));
-                il.Emit(OpCodes.Br_S, endLabel);
+                    return false;
+                }
 
-                il.MarkLabel(falseLabel);
-                il.DeclareLocal(typeof(TimeSpan));
-                il.Emit(OpCodes.Ldloca_S, locals);
-                il.Emit(OpCodes.Initobj, typeof(TimeSpan));
-                Ldloc(il, locals);
-                il.MarkLabel(endLabel);
+                if (rawType == typeof(DateTime) ||
+                    rawType == typeof(DateTimeOffset))
+                {
+                    var falseLabel = il.DefineLabel();
+                    var endLabel = il.DefineLabel();
 
-                return true;
-            }
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.HasValue)).GetMethod);
+                    il.Emit(OpCodes.Brfalse_S, falseLabel);
 
-            if (rawType != null)
+                    il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.Value)).GetMethod);
+
+                    il.Emit(OpCodes.Call, rawType.GetProperty(nameof(DateTime.Now)).GetMethod);
+                    il.Emit(OpCodes.Call, rawType.GetMethod("op_Subtraction", new[] { rawType, rawType }));
+                    il.Emit(OpCodes.Br_S, endLabel);
+
+                    il.MarkLabel(falseLabel);
+                    il.DeclareLocal(typeof(TimeSpan));
+                    il.Emit(OpCodes.Ldloca_S, locals);
+                    il.Emit(OpCodes.Initobj, typeof(TimeSpan));
+                    Ldloc(il, locals);
+                    il.MarkLabel(endLabel);
+
+                    return true;
+                }
+
+                if (rawType != null)
+                    il.Emit(OpCodes.Call,
+                        type.GetMethod(nameof(Nullable<TimeSpan>.GetValueOrDefault),
 #if NET45
-                il.Emit(OpCodes.Call, type.GetMethod(nameof(Nullable<TimeSpan>.GetValueOrDefault), new Type[0]));
+                            new Type[0]));
 #else
-                il.Emit(OpCodes.Call, type.GetMethod(nameof(Nullable<TimeSpan>.GetValueOrDefault), Array.Empty<Type>()));
+                            Array.Empty<Type>()));
 #endif
                 if ((rawType ?? type) == typeof(TimeSpan)) return false;
 
-            if ((rawType ?? type) != typeof(double))
-            {
-                if ((rawType ?? type) == typeof(uint) ||
-                    (rawType ?? type) == typeof(ulong))
-                    il.Emit(OpCodes.Conv_R_Un);
-                else if ((rawType ?? type) == typeof(decimal))
-                    il.Emit(OpCodes.Call, typeof(decimal).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                        .First(m => m.Name == "op_Explicit" &&
-                                    m.ReturnType == typeof(double)));
+                if ((rawType ?? type) != typeof(double))
+                {
+                    if ((rawType ?? type) == typeof(uint) ||
+                        (rawType ?? type) == typeof(ulong))
+                        il.Emit(OpCodes.Conv_R_Un);
+                    else if ((rawType ?? type) == typeof(decimal))
+                        il.Emit(OpCodes.Call, typeof(decimal).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .First(m => m.Name == "op_Explicit" &&
+                                        m.ReturnType == typeof(double)));
 
-                il.Emit(OpCodes.Conv_R8);
+                    il.Emit(OpCodes.Conv_R8);
+                }
             }
 
             il.Emit(OpCodes.Call, typeof(TimeSpan).GetMethod(nameof(TimeSpan.FromSeconds)));

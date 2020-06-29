@@ -23,7 +23,7 @@ namespace NetCache
     var parameterTypes = parameters.Keys.ToArray();
     var funcs = Enumerable.Range(1, parameterTypes.Length)
         .SelectMany(index => PermutationAndCombination<string>.GetPermutation(parameterTypes, index))
-        .Select(types => types.SequenceEqual(parameterTypes) ? Array.Empty<string>() : types)
+        .Union(new [] { Array.Empty<string>() })
         .OrderBy(types => types.Length)
         .ThenBy(types =>
         {
@@ -48,7 +48,18 @@ namespace NetCache
 <#  foreach(var types in funcs)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> Wrap<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>TV> func) =>
+        public static Func<<#= string.Join(", ", parameterTypes) #>, TV> Wrap<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>TV> func) =>
+            (<#= string.Join(", ", parameters.Values) #>) => func(<#= string.Join(", ", types.Select(p => parameters[p])) #>);
+
+<#  } #>
+        #endregion
+
+        #region Async Wrap
+
+<#  foreach(var types in funcs)
+    { #>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>TV> func) =>
             (<#= string.Join(", ", parameters.Values) #>) => new ValueTask<TV>(func(<#= string.Join(", ", types.Select(p => parameters[p])) #>));
 
 <#  } #>
@@ -59,7 +70,7 @@ namespace NetCache
 <#  foreach(var types in funcs)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> Wrap<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>Task<TV>> func) =>
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>Task<TV>> func) =>
             (<#= string.Join(", ", parameters.Values) #>) => new ValueTask<TV>(func(<#= string.Join(", ", types.Select(p => parameters[p])) #>));
 
 <#  } #>
@@ -70,7 +81,7 @@ namespace NetCache
 <#  foreach(var types in funcs)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> Wrap<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>ValueTask<TV>> func) =>
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>ValueTask<TV>> func) =>
             (<#= string.Join(", ", parameters.Values) #>) => func(<#= string.Join(", ", types.Select(p => parameters[p])) #>);
 
 <#  } #>

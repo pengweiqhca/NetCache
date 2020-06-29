@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace NetCache.Tests.TestHelpers
 {
-    [Cache(CacheName)]
+    [Cache(CacheName, TtlSecond = 10)]
     public abstract class Int64Cache
     {
         public const string CacheName = "long";
@@ -15,6 +15,8 @@ namespace NetCache.Tests.TestHelpers
         public virtual long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public abstract Task<long> GetAsync(string key);
         public abstract Task<long> GetAsync(string key, Func<long> func);
+        public abstract Task<long> GetAsync(string key, TimeSpan ttl, CancellationToken cancellationToken, Func<string, TimeSpan, CancellationToken, ValueTask<long>> func);
+        public abstract Task<long> GetAsync(string key, Func<ValueTask<long>> func);
         public abstract void Set(string key, string value, int ttlSecond);
         public abstract void Set(string key, int ttlSecond, string value);
         public abstract void Set(string key, string value, int ttlSecond, CancellationToken cancellationToken);

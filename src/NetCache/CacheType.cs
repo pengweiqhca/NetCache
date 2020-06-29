@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace NetCache
 {
@@ -16,6 +15,7 @@ namespace NetCache
         public string Name { get; }
         public Type Type { get; }
         public IReadOnlyList<CacheMethod> Methods { get; }
+        public int DefaultTtl { get; set; }
 
         public override string ToString() => Type.ToString();
     }

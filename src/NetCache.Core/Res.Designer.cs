@@ -68,5 +68,14 @@ namespace NetCache {
                 return ResourceManager.GetString("Serializer_Not_Support_Task", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   查找类似 The value must than 0. 的本地化字符串。
+        /// </summary>
+        internal static string Value_Must_Than_Zero {
+            get {
+                return ResourceManager.GetString("Value_Must_Than_Zero", resourceCulture);
+            }
+        }
     }
 }

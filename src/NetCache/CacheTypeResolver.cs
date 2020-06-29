@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -73,12 +74,12 @@ namespace NetCache
 
             if (exceptions.Count > 0) throw new AggregateException(exceptions);
 
-            return new CacheType(GetCacheName(type), type, methods);
+            return new CacheType(GetCacheName(type, out var defaultTtl), type, methods) { DefaultTtl = defaultTtl };
         }
 
         public static CacheMethod? ResolveGet(MethodInfo method)
         {
-            var valueType = SyncType(method.ReturnType, out var a);
+            var valueType = GetSyncType(method.ReturnType, out var a);
             if (valueType == typeof(void)) return null;
 
             var parameters = method.GetParameters();
@@ -111,18 +112,45 @@ namespace NetCache
                 if (!parameters[index].ParameterType.IsGenericType) return null;
 
                 var args = parameters[index].ParameterType.GetGenericArguments();
+                if (valueType != GetSyncType(args[args.Length - 1], out var b) || !a && b ||
+                    args.Length == 1 && typeof(Func<>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
+                    args.Length == 2 && typeof(Func<,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
+                    args.Length == 3 && typeof(Func<,,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
+                    args.Length == 4 && typeof(Func<,,,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
+                    args.Length > 4 || value > 0 || !method.IsAbstract) return null;
 
-                if (valueType != SyncType(args[args.Length - 1], out var b) || !a && b || //return type compare
-                    args.Length == 1 && //Func<T>
-                    typeof(Func<>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                    args.Length == 2 && //Func<string, T>, Func<CancellationToken, T>
-                    (typeof(Func<,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                     args[0] != parameters[0].ParameterType && args[0] != typeof(CancellationToken)) ||
-                    args.Length == 3 && //Func<string, CancellationToken, T>, Func<CancellationToken, string, T>
-                    (typeof(Func<,,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                     !(args[0] == parameters[0].ParameterType && args[1] == typeof(CancellationToken) ||
-                       args[1] == parameters[0].ParameterType && args[0] == typeof(CancellationToken))) ||
-                    args.Length > 3 || value > 0 || !method.IsAbstract) return null;
+                var type = 0;
+                for (var i = 0; i < args.Length - 2; i++)
+                {
+                    if (args[i] == parameters[0].ParameterType)
+                    {
+                        if ((type & 1) == 1) return null;
+
+                        type |= 1;
+
+                        continue;
+                    }
+
+                    if (args[i] == typeof(TimeSpan))
+                    {
+                        if ((type & 2) == 2) return null;
+
+                        type |= 2;
+
+                        continue;
+                    }
+
+                    if (args[i] == typeof(CancellationToken))
+                    {
+                        if ((type & 4) == 4) return null;
+
+                        type |= 4;
+
+                        continue;
+                    }
+
+                    return null;
+                }
 
                 value = index;
             }
@@ -137,7 +165,7 @@ namespace NetCache
 
         public static CacheMethod? ResolveSet(MethodInfo method)
         {
-            var returnType = SyncType(method.ReturnType, out _);
+            var returnType = GetSyncType(method.ReturnType, out _);
             if (returnType != typeof(void) && returnType != typeof(bool)) return null;
 
             var parameters = method.GetParameters();
@@ -257,7 +285,7 @@ namespace NetCache
 
         public static CacheMethod? ResolveRemove(MethodInfo method)
         {
-            var returnType = SyncType(method.ReturnType, out _);
+            var returnType = GetSyncType(method.ReturnType, out _);
             if (returnType != typeof(void) && returnType != typeof(bool)) return null;
 
             return method.GetParameters().Length == 1 ? new CacheMethod(method, CacheOperation.Remove) { RawType = typeof(bool) } : null;
@@ -265,14 +293,19 @@ namespace NetCache
 
         internal static Exception ParameterException(Type type, MethodInfo method) => new NotSupportedException($"{type.FullName}.{method.Name}参数异常");
 
-        public static string GetCacheName(Type type)
+        public static string GetCacheName(Type type, out int defaultTtl)
         {
-            var attr = type.GetCustomAttribute<CacheAttribute>(true);
+            defaultTtl = 0;
 
-            return attr == null ? type.FullName : attr.CacheName;
+            var attr = type.GetCustomAttribute<CacheAttribute>(true);
+            if (attr == null) return type.FullName;
+
+            defaultTtl = attr.TtlSecond;
+
+            return attr.CacheName;
         }
 
-        private static Type SyncType(Type type, out bool isAsync)
+        private static Type GetSyncType(Type type, out bool isAsync)
         {
             if (type == typeof(Task) || type == typeof(ValueTask))
             {

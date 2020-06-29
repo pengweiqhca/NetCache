@@ -120,4 +120,7 @@
   <data name="Serializer_Not_Support_Task" xml:space="preserve">
     <value>Not support Task</value>
   </data>
+  <data name="Value_Must_Than_Zero" xml:space="preserve">
+    <value>The value must than 0.</value>
+  </data>
 </root>

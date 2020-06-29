@@ -53,7 +53,7 @@ namespace NetCache.Tests
                     output.WriteLine("");
                     output.WriteLine(raw);
                     output.WriteLine("");
-                    output.WriteLine("====⇈⇈BuildTime⇈⇈===============⇊⇊RunTime⇊⇊====");
+                    output.WriteLine("==⇈⇈==BuildTime==⇈⇈===========⇊⇊==RunTime==⇊⇊==");
                     output.WriteLine("");
                     output.WriteLine(generated);
 
@@ -83,7 +83,7 @@ ldarg.1 NULL
 ldarg.0 NULL
 ldftn virtual System.Int64 NetCache.Tests.IDefaultImplementation::Get(System.String key)
 newobj System.Void System.Func`2<System.String, System.Int64>::.ctor(System.Object object, System.IntPtr method)
-call static System.Func`4<System.String, System.TimeSpan, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask`1<System.Int64>> NetCache.FuncHelper::Wrap(System.Func`2<System.String, System.Int64> func)
+call static System.Func`4<System.String, System.TimeSpan, System.Threading.CancellationToken, System.Int64> NetCache.FuncHelper::Wrap(System.Func`2<System.String, System.Int64> func)
 ldloca.s 0 (System.TimeSpan)
 initobj System.TimeSpan
 ldloc.0 NULL

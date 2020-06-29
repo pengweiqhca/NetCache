@@ -47,8 +47,10 @@ namespace NetCache.Tests
         [Fact]
         public void CacheNameTest()
         {
-            Assert.Equal(typeof(StringCache).FullName, CacheTypeResolver.GetCacheName(typeof(StringCache)));
-            Assert.Equal("long", CacheTypeResolver.GetCacheName(typeof(Int64Cache)));
+            Assert.Equal(typeof(StringCache).FullName, CacheTypeResolver.GetCacheName(typeof(StringCache), out var defaultTtl));
+            Assert.Equal(0, defaultTtl);
+            Assert.Equal("long", CacheTypeResolver.GetCacheName(typeof(Int64Cache), out defaultTtl));
+            Assert.Equal(10, defaultTtl);
         }
 
         [Fact]

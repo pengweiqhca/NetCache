@@ -109,16 +109,16 @@ namespace NetCache
 
             foreach (var method in ctors)
                 foreach (var ctor in typeof(CacheHelper).GetConstructors().Take(1))
-                    BuildConstructor(tb, type.Name, filed, method, ctor);
+                    BuildConstructor(tb, type, filed, method, ctor);
 
             return filed;
         }
 
-        private static void BuildConstructor(TypeBuilder tb, string cacheName, FieldInfo field, ConstructorInfo cacheCtor, ConstructorInfo helperCtor)
+        private static void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo cacheCtor, ConstructorInfo helperCtor)
         {
             var p1 = cacheCtor.GetParameters();
             var p2 = helperCtor.GetParameters();
-            var parameterTypes = p1.Union(p2.Skip(1)).Select(p => p.ParameterType).ToArray();
+            var parameterTypes = p1.Union(p2.Skip(1)).Take(p1.Length + p2.Length - 2).Select(p => p.ParameterType).ToArray();
             var ctor = tb.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, parameterTypes)
                 .GetILGenerator();
 
@@ -131,8 +131,10 @@ namespace NetCache
 
             //new CacheHelper
             ctor.Emit(OpCodes.Ldarg_0);
-            ctor.Emit(OpCodes.Ldstr, cacheName);
-            for (; index < p1.Length + p2.Length; index++) Ldarg(ctor, index);
+            ctor.Emit(OpCodes.Ldstr, type.Name);
+            for (; index < p1.Length + p2.Length - 1; index++) Ldarg(ctor, index);
+
+            ctor.Emit(OpCodes.Ldc_I4_S, type.DefaultTtl);
 
             ctor.Emit(OpCodes.Newobj, helperCtor);
             ctor.Emit(OpCodes.Stfld, field);

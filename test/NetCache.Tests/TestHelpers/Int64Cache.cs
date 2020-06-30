@@ -4,10 +4,11 @@ using System.Threading.Tasks;
 
 namespace NetCache.Tests.TestHelpers
 {
-    [Cache(CacheName, TtlSecond = 10)]
+    [Cache(CacheName, TtlSecond = DefaultTtl)]
     public abstract class Int64Cache
     {
         public const string CacheName = "long";
+        public const int DefaultTtl = 10;
 
         protected Int64Cache(object any) { }
 

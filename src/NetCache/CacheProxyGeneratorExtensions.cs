@@ -22,7 +22,7 @@ namespace NetCache
             if (generator == null) throw new ArgumentNullException(nameof(generator));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var args = new object[6 + additionalParameters.Length];
+            var args = new object[7 + additionalParameters.Length];
 
             args[0] = options.CacheProviderFactory;
             args[1] = options.DistributedLockFactory;

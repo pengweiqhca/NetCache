@@ -135,6 +135,9 @@
   <data name="Value_is_Too_Large" xml:space="preserve">
     <value>The value length({0}) is greater than the maximum length of {1}</value>
   </data>
+  <data name="Value_Must_Than_Zero" xml:space="preserve">
+    <value>The value must than 0.</value>
+  </data>
   <data name="Wait_Lock_Timeout" xml:space="preserve">
     <value>Waiting for lock timeout.</value>
   </data>

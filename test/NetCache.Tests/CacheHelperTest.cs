@@ -40,7 +40,7 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
             Assert.Equal($"{(Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).GetName().Name}/Cache/{Int64Cache.CacheName}", name);
 
@@ -74,9 +74,9 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
-            helper.GetOrSet(Guid.NewGuid().ToString(), (_1, _2, token) => "", TimeSpan.FromSeconds(10), default);
+            helper.GetOrSet(Guid.NewGuid().ToString(), (_1, _2, token) => "", TimeSpan.FromSeconds(Int64Cache.DefaultTtl), default);
 
             Assert.Equal($"{(Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).GetName().Name}/Lock/{Int64Cache.CacheName}", name);
 
@@ -117,7 +117,7 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
             Assert.Equal(value, helper.Get<string, byte[]>(key, default));
             Assert.Equal(value, await helper.GetAsync<string, byte[]>(key, default).ConfigureAwait(false));
@@ -210,7 +210,7 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
             var task = helper.GetOrSetAsync(key, async (s, t, token) =>
             {
@@ -274,7 +274,7 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
             var key = Guid.NewGuid().ToString();
             var value = new ReadOnlyMemory<byte>(Guid.NewGuid().ToByteArray());
@@ -322,7 +322,7 @@ namespace NetCache.Tests
                 new SystemTextJsonSerializer(),
 #endif
                 new RecyclableMemoryStreamManager(),
-                new CacheOptions());
+                new CacheOptions(), Int64Cache.DefaultTtl);
 
             helper.Remove(key, default);
             await helper.RemoveAsync(key, default).ConfigureAwait(false);
@@ -332,6 +332,110 @@ namespace NetCache.Tests
             provider.VerifyGet(x => x.Name);
 
             provider.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void TtlTest()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CacheOptions { DefaultTtl = 0 });
+
+            var provider = new Mock<ICacheProvider>();
+
+            var ttl = TimeSpan.Zero;
+            provider.Setup(x => x.Set(It.IsAny<string>(), It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<TimeSpan>(), It.IsAny<When>(), It.IsAny<CancellationToken>()))
+                .Callback<string, ReadOnlyMemory<byte>, TimeSpan, When, CancellationToken>((s, memory, arg3, arg4, arg5) =>
+                {
+                    ttl = arg3;
+                });
+
+            string? name = null;
+
+            provider.SetupGet(x => x.Name).Returns(() => name!);
+
+            var factory = new Mock<ICacheProviderFactory>();
+
+            factory.Setup(x => x.Create(It.IsAny<string>()))
+                .Returns<string>(_ =>
+                {
+                    name = _;
+
+                    return provider.Object;
+                });
+
+            var key = Guid.NewGuid().ToString();
+            var value = new ReadOnlyMemory<byte>(Guid.NewGuid().ToByteArray());
+
+            #region CacheAttribute.TtlSecond
+            var helper = new CacheHelper(Int64Cache.CacheName, factory.Object, new Mock<IDistributedLockFactory>().Object,
+                new KeyFormatter(),
+#if NET46
+                new NewtonsoftJsonSerializer(),
+#else
+                new SystemTextJsonSerializer(),
+#endif
+                new RecyclableMemoryStreamManager(),
+                new CacheOptions(), Int64Cache.DefaultTtl);
+
+            helper.Set(key, value, TimeSpan.FromSeconds(20), When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(20), ttl);
+
+            helper.Set(key, value, TimeSpan.Zero, When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(Int64Cache.DefaultTtl), ttl);
+            #endregion
+
+            #region CacheOptions.Ttl
+            helper = new CacheHelper(Int64Cache.CacheName, factory.Object, new Mock<IDistributedLockFactory>().Object,
+                new KeyFormatter(),
+#if NET46
+                new NewtonsoftJsonSerializer(),
+#else
+                new SystemTextJsonSerializer(),
+#endif
+                new RecyclableMemoryStreamManager(),
+                new CacheOptions { Ttl = { { Int64Cache.CacheName, 20 } } }, 0);
+
+            helper.Set(key, value, TimeSpan.FromSeconds(15), When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(15), ttl);
+
+            helper.Set(key, value, TimeSpan.Zero, When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(20), ttl);
+            #endregion
+
+            #region CacheOptions.DefaultTtl
+            helper = new CacheHelper(Int64Cache.CacheName, factory.Object, new Mock<IDistributedLockFactory>().Object,
+                new KeyFormatter(),
+#if NET46
+                new NewtonsoftJsonSerializer(),
+#else
+                new SystemTextJsonSerializer(),
+#endif
+                new RecyclableMemoryStreamManager(),
+                new CacheOptions(), 0);
+
+            helper.Set(key, value, TimeSpan.FromSeconds(20), When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(20), ttl);
+
+            helper.Set(key, value, TimeSpan.Zero, When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(30), ttl);
+            #endregion
+
+            #region CacheOptions.MaxTll
+            helper = new CacheHelper(Int64Cache.CacheName, factory.Object, new Mock<IDistributedLockFactory>().Object,
+                new KeyFormatter(),
+#if NET46
+                new NewtonsoftJsonSerializer(),
+#else
+                new SystemTextJsonSerializer(),
+#endif
+                new RecyclableMemoryStreamManager(),
+                new CacheOptions { MaxTll = 5 }, Int64Cache.DefaultTtl);
+
+            helper.Set(key, value, TimeSpan.FromSeconds(20), When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(5), ttl);
+
+            helper.Set(key, value, TimeSpan.Zero, When.NotExists, default);
+            Assert.Equal(TimeSpan.FromSeconds(5), ttl);
+            #endregion
         }
     }
 }

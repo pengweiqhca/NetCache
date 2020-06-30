@@ -18,19 +18,19 @@ namespace NetCache.Tests.TestHelpers
             RecyclableMemoryStreamManager manager,
             IOptionsMonitor<CacheOptions> options)
             : base(any) =>
-            _helper = new CacheHelper(CacheName, cpf, factory, formatter, serializer, manager, options);
+            _helper = new CacheHelper(CacheName, cpf, factory, formatter, serializer, manager, options, DefaultTtl);
 
         public override long? Get(string key) =>
-            _helper.GetOrSet(key, FuncHelper.Wrap(new Func<string, long?>(base.Get)), TimeSpan.FromSeconds(10), default);
+            _helper.GetOrSet(key, FuncHelper.Wrap(new Func<string, long?>(base.Get)), TimeSpan.FromSeconds(DefaultTtl), default);
 
         public override long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) =>
             _helper.GetOrSet(key, base.Get, ttl, cancellationToken);
         public override Task<long> GetAsync(string key) =>
             _helper.GetAsync<string, long>(key, default).AsTask();
         public override Task<long> GetAsync(string key, Func<long> func) =>
-            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(10), default).AsTask();
+            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
         public override Task<long> GetAsync(string key, Func<ValueTask<long>> func) =>
-            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(10), default).AsTask();
+            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
 
         public override Task<long> GetAsync(string key, TimeSpan ttl, CancellationToken cancellationToken, Func<string, TimeSpan, CancellationToken, ValueTask<long>> func) =>
             _helper.GetOrSetAsync(key, func, ttl, cancellationToken).AsTask();
@@ -44,9 +44,9 @@ namespace NetCache.Tests.TestHelpers
             _helper.Set(key, value, TimeSpan.FromSeconds(ttlSecond), When.Always, cancellationToken);
 
         public override ValueTask<bool> SetAsync(string key, string value) =>
-            _helper.SetAsync(key, value, TimeSpan.FromSeconds(10), When.Always, default);
+            _helper.SetAsync(key, value, TimeSpan.FromSeconds(DefaultTtl), When.Always, default);
         public override ValueTask SetAsync(string key, string value, CancellationToken cancellationToken) =>
-            CacheProxyGenerator.Convert(_helper.SetAsync(key, value, TimeSpan.FromSeconds(10), When.Always, cancellationToken));
+            CacheProxyGenerator.Convert(_helper.SetAsync(key, value, TimeSpan.FromSeconds(DefaultTtl), When.Always, cancellationToken));
 
         public override void Delete(string key) => _helper.Remove(key, default);
         public override Task RemoveAsync(string key) => _helper.RemoveAsync(key, default).AsTask();

@@ -115,6 +115,15 @@ namespace NetCache {
         }
         
         /// <summary>
+        ///   查找类似 The value must than 0. 的本地化字符串。
+        /// </summary>
+        internal static string Value_Must_Than_Zero {
+            get {
+                return ResourceManager.GetString("Value_Must_Than_Zero", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Waiting for lock timeout. 的本地化字符串。
         /// </summary>
         internal static string Wait_Lock_Timeout {

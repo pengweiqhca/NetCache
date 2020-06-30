@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace NetCache
@@ -6,6 +7,8 @@ namespace NetCache
     /// <summary>Cache options</summary>
     public class CacheOptions
     {
+        private int _defaultTtl = 30;
+
         /// <summary>The max key length, default 256</summary>
         public int MaxKeyLength { get; set; } = 256;
 
@@ -22,7 +25,16 @@ namespace NetCache
         public int LockTimeout { get; set; } = 30;
 
         /// <summary>Default ttl, default 30 second.</summary>
-        public int DefaultTtl { get; set; } = 30;
+        public int DefaultTtl
+        {
+            get => _defaultTtl;
+            set
+            {
+                if (value < 1) throw new ArgumentOutOfRangeException(nameof(value), Res.Value_Must_Than_Zero);
+
+                _defaultTtl = value;
+            }
+        }
 
         /// <summary>Max ttl, default 30 day.</summary>
         public int MaxTll { get; set; } = 30 * 24 * 60 * 60;

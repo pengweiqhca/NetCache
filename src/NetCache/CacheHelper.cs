@@ -17,6 +17,7 @@ namespace NetCache
         private readonly IDistributedLockFactory _factory;
         private readonly IKeyFormatter _formatter;
         private readonly RecyclableMemoryStreamManager _manager;
+        private readonly int _defaultTTl;
         private readonly IValueSerializer _serializer;
         private readonly string _name;
         private readonly CacheOptions _options;
@@ -28,7 +29,8 @@ namespace NetCache
             IKeyFormatter formatter,
             IValueSerializer serializer,
             RecyclableMemoryStreamManager manager,
-            IOptionsMonitor<CacheOptions> options)
+            IOptionsMonitor<CacheOptions> options,
+            int defaultTTl)
         {
             if (cpf == null) throw new ArgumentNullException(nameof(cpf));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -37,6 +39,7 @@ namespace NetCache
             _manager = manager;
 
             _options = options.CurrentValue;
+            _defaultTTl = defaultTTl < 1 ? _options.DefaultTtl : defaultTTl;
             _provider = cpf.Create($"{_options.KeyPrefix}/Cache/{_name = name}");
             _serializer = _options.CompressValue ? new CompressionSerializer(serializer, manager) : serializer;
         }
@@ -47,10 +50,12 @@ namespace NetCache
             IKeyFormatter formatter,
             IValueSerializer serializer,
             RecyclableMemoryStreamManager manager,
-            CacheOptions options)
+            CacheOptions options,
+            int defaultTTl)
         {
             if (cpf == null) throw new ArgumentNullException(nameof(cpf));
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _defaultTTl = defaultTTl < 1 ? _options.DefaultTtl : defaultTTl;
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
 
             _formatter = formatter;
@@ -59,12 +64,12 @@ namespace NetCache
             _serializer = _options.CompressValue ? new CompressionSerializer(serializer, manager) : serializer;
         }
 
-        private TimeSpan GetDefaultTtl() => TimeSpan.FromSeconds(_options.Ttl.TryGetValue(_name, out var ttl) ? ttl : _options.DefaultTtl);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private TimeSpan GetTtl(TimeSpan expiry)
         {
-            if (expiry.TotalSeconds < 1) return GetDefaultTtl();
+            if (expiry.TotalSeconds < 1)
+                return TimeSpan.FromSeconds(Math.Min(_options.MaxTll,
+                    _options.Ttl.TryGetValue(_name, out var ttl) ? ttl : _defaultTTl));
 
             return expiry.TotalSeconds > _options.MaxTll ? TimeSpan.FromSeconds(_options.MaxTll) : expiry;
         }

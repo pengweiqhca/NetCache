@@ -114,9 +114,9 @@ namespace NetCache
             return filed;
         }
 
-        private static void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo cacheCtor, ConstructorInfo helperCtor)
+        private static void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo baseCtor, ConstructorInfo helperCtor)
         {
-            var p1 = cacheCtor.GetParameters();
+            var p1 = baseCtor.GetParameters();
             var p2 = helperCtor.GetParameters();
             var parameterTypes = p1.Union(p2.Skip(1)).Take(p1.Length + p2.Length - 2).Select(p => p.ParameterType).ToArray();
             var ctor = tb.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, parameterTypes)
@@ -127,7 +127,7 @@ namespace NetCache
             var index = 1;
             for (; index <= p1.Length; index++) Ldarg(ctor, index);
 
-            ctor.Emit(OpCodes.Call, cacheCtor);
+            ctor.Emit(OpCodes.Call, baseCtor);
 
             //new CacheHelper
             ctor.Emit(OpCodes.Ldarg_0);

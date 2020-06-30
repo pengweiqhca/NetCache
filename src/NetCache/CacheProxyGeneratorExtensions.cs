@@ -22,17 +22,16 @@ namespace NetCache
             if (generator == null) throw new ArgumentNullException(nameof(generator));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var args = new object[7 + additionalParameters.Length];
+            var args = new object[6 + additionalParameters.Length];
 
-            args[0] = options.CacheProviderFactory;
-            args[1] = options.DistributedLockFactory;
-            args[2] = options.KeyFormatter;
-            args[3] = options.ValueSerializer;
-            args[4] = options.StreamManager;
-            args[5] = new OptionMonitorWrapper(options.Options);
+            Array.Copy(additionalParameters, args, additionalParameters.Length);
 
-            for (var index = 0; index < additionalParameters.Length; index++)
-                args[index + 6] = additionalParameters[index];
+            args[args.Length - 6] = options.CacheProviderFactory;
+            args[args.Length - 5] = options.DistributedLockFactory;
+            args[args.Length - 4] = options.KeyFormatter;
+            args[args.Length - 3] = options.ValueSerializer;
+            args[args.Length - 2] = options.StreamManager;
+            args[args.Length - 1] = new OptionMonitorWrapper(options.Options);
 
             return (T)Activator.CreateInstance(generator.CreateProxyType(typeof(T)), args);
         }
@@ -40,9 +39,13 @@ namespace NetCache
         private class OptionMonitorWrapper : IOptionsMonitor<CacheOptions>, IDisposable
         {
             public OptionMonitorWrapper(CacheOptions options) => CurrentValue = options;
-
+#if NET45
             public IDisposable OnChange(Action<CacheOptions> listener) => this;
+#else
+            public CacheOptions Get(string name) => CurrentValue;
 
+            public IDisposable OnChange(Action<CacheOptions, string> listener) => this;
+#endif
             public CacheOptions CurrentValue { get; }
 
             public void Dispose() { }

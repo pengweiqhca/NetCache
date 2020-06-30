@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.*" Condition="'$(TargetFramework)' != 'net46'" />
+
+    <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.SystemRuntimeCaching\NetCache.SystemRuntimeCaching.csproj" />
+    <ProjectReference Include="..\..\src\NetCache\NetCache.csproj" />
+  </ItemGroup>
+
+</Project>

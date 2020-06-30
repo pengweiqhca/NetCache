@@ -1,27 +1,27 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using System;
+﻿using System;
+using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
-    public class MemoryCacheProvider : ICacheProvider
+    public class RuntimeCachingProvider : ICacheProvider
     {
-        private readonly IMemoryCache _cache;
+        private readonly ObjectCache _cache;
         private readonly object _syncObj = new object();
 
         public string Name { get; }
 
-        public MemoryCacheProvider(string name, IMemoryCache cache)
+        public RuntimeCachingProvider(string name, ObjectCache cache)
         {
-            Name = name;
             _cache = cache;
+            Name = name;
         }
 
         private string GetKey(string key) => $"{Name}/{key}";
 
         public ReadOnlyMemory<byte>? Get(string key, CancellationToken cancellationToken) =>
-            _cache.TryGetValue<ReadOnlyMemory<byte>>(GetKey(key), out var value) ? value : default(ReadOnlyMemory<byte>?);
+            (ReadOnlyMemory<byte>?)_cache.Get(GetKey(key));
 
         public ValueTask<ReadOnlyMemory<byte>?> GetAsync(string key, CancellationToken cancellationToken) =>
             new ValueTask<ReadOnlyMemory<byte>?>(Get(key, cancellationToken));
@@ -33,13 +33,13 @@ namespace NetCache
             if (when == When.Always) return SetValue();
 
             lock (_syncObj)
-                return _cache.TryGetValue(key, out _)
-                    ? when != When.NotExists && SetValue()
-                    : when != When.Exists && SetValue();
+                return _cache.Get(key) == null
+                    ? when != When.Exists && SetValue()
+                    : when != When.NotExists && SetValue();
 
             bool SetValue()
             {
-                _cache.Set(key, value, expiry);
+                _cache.Set(key, value, DateTimeOffset.Now.Add(expiry));
 
                 return true;
             }
@@ -52,11 +52,11 @@ namespace NetCache
         {
             key = GetKey(key);
 
-            if (!_cache.TryGetValue(key, out _)) return false;
+            if (_cache.Get(key) == null) return false;
 
             lock (_syncObj)
             {
-                if (!_cache.TryGetValue(key, out _)) return false;
+                if (_cache.Get(key) == null) return false;
 
                 _cache.Remove(key);
 

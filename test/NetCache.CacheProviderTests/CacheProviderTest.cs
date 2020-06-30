@@ -30,10 +30,10 @@ namespace NetCache.CacheProviderTests
             Assert.Null(provider.Get(key, default));
             Assert.False(provider.Remove(key, default));
 
-            Assert.False(provider.Set(key, value, TimeSpan.FromSeconds(1), When.Exists, default));
-            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(1), When.NotExists, default));
-            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(1), When.Exists, default));
-            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(1), When.Always, default));
+            Assert.False(provider.Set(key, value, TimeSpan.FromSeconds(10), When.Exists, default));
+            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(10), When.NotExists, default));
+            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(10), When.Exists, default));
+            Assert.True(provider.Set(key, value, TimeSpan.FromSeconds(10), When.Always, default));
 
             Assert.Equal(value, provider.Get(key, default).GetValueOrDefault().ToArray());
             Assert.True(provider.Remove(key, default));
@@ -50,10 +50,10 @@ namespace NetCache.CacheProviderTests
             Assert.Null(await provider.GetAsync(key, default).ConfigureAwait(false));
             Assert.False(await provider.RemoveAsync(key, default).ConfigureAwait(false));
 
-            Assert.False(await provider.SetAsync(key, value, TimeSpan.FromSeconds(1), When.Exists, default).ConfigureAwait(false));
-            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(1), When.NotExists, default).ConfigureAwait(false));
-            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(1), When.Exists, default).ConfigureAwait(false));
-            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(1), When.Always, default).ConfigureAwait(false));
+            Assert.False(await provider.SetAsync(key, value, TimeSpan.FromSeconds(10), When.Exists, default).ConfigureAwait(false));
+            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(10), When.NotExists, default).ConfigureAwait(false));
+            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(10), When.Exists, default).ConfigureAwait(false));
+            Assert.True(await provider.SetAsync(key, value, TimeSpan.FromSeconds(10), When.Always, default).ConfigureAwait(false));
 
             Assert.Equal(value, (await provider.GetAsync(key, default).ConfigureAwait(false)).GetValueOrDefault().ToArray());
             Assert.True(await provider.RemoveAsync(key, default).ConfigureAwait(false));
@@ -67,7 +67,7 @@ namespace NetCache.CacheProviderTests
             var key = Guid.NewGuid().ToString();
             var value = new ReadOnlyMemory<byte>(Array.Empty<byte>());
 
-            provider.Set(key, value, TimeSpan.FromSeconds(1), When.Always, default);
+            provider.Set(key, value, TimeSpan.FromSeconds(10), When.Always, default);
 
             var result = provider.Get(key, default);
 

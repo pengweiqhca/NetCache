@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\NetCache.CSRedis\NetCache.CSRedis.csproj" />
     <ProjectReference Include="..\..\src\NetCache.MicrosoftExtensionsCaching\NetCache.MicrosoftExtensionsCaching.csproj" />
     <ProjectReference Include="..\..\src\NetCache.StackExchangeRedis\NetCache.StackExchangeRedis.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.SystemRuntimeCaching\NetCache.SystemRuntimeCaching.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

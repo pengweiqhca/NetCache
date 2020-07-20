@@ -11,7 +11,7 @@ namespace NetCache.Demo
             var services = new ServiceCollection().AddMemoryCache();
 
             services.AddNetCache()
-                .AddProxy<Int64Cache>(_ => new object[] { _ })
+                .AddCacheType<Int64Cache>(_ => new object[] { _ })
 #if NET46
                 .UseNewtonsoftJsonSerializer()
 #else

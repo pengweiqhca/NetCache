@@ -5,7 +5,7 @@ namespace NetCache
 {
     public static class NetCacheBuilderExtensions
     {
-        public static INetCacheBuilder AddProxy<T>(this INetCacheBuilder builder, Func<IServiceProvider, object[]>? getParameters = null,
+        public static INetCacheBuilder AddCacheType<T>(this INetCacheBuilder builder, Func<IServiceProvider, object[]>? getParameters = null,
             ServiceLifetime lifetime = ServiceLifetime.Scoped) where T : class
         {
             if (builder == null) throw new ArgumentNullException(nameof(builder));

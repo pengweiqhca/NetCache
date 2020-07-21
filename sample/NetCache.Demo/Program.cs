@@ -15,15 +15,12 @@ namespace NetCache.Demo
             var services = new ServiceCollection();
 #else
             using var host = Host.CreateDefaultBuilder(args)
-                    .ConfigureServices(services =>
-                    {
+                .ConfigureServices(services =>
+                {
 #endif
-                        services.AddMemoryCache();
-
-                        services.AddScoped<A>();
-
-                        services.AddNetCache()
-                        .AddCacheType<Int64Cache>(_ => new object[] { _ })
+                    services.AddMemoryCache()
+                        .AddNetCache()
+                        .AddCacheType<Int64Cache>(_ => new object[] {_})
                         .UseMemoryCache()
 #if NET46
                 .UseNewtonsoftJsonSerializer();
@@ -31,8 +28,8 @@ namespace NetCache.Demo
             var root = services.BuildServiceProvider(true);
 #else
                         .UseSystemTextJsonSerializer();
-                    })
-                    .Build();
+                })
+                .Build();
 
             var root = host.Services;
 #endif

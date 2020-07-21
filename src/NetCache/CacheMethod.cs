@@ -27,6 +27,8 @@ namespace NetCache
                 ValueType = method.ReturnType.GetGenericArguments()[0];
             }
             else ValueType = method.ReturnType;
+
+            WarpedValue = ValueType.IsGenericType && ValueType.GetGenericTypeDefinition() == typeof(ICacheResult<>);
         }
 
         public CacheOperation Operation { get; }
@@ -34,6 +36,7 @@ namespace NetCache
 
         public Type? AsyncType { get; }
         public Type ValueType { get; }
+        public bool WarpedValue { get; }
         public Type? RawType { get; set; }
 
         /// <summary>ttl parameter index</summary>

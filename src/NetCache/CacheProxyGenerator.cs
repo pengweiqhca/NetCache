@@ -150,17 +150,17 @@ namespace NetCache
                 var locals = 0;
                 if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
-                BuildCacheMethod(method, locals, il, nameof(CacheHelper.Get), nameof(CacheHelper.GetAsync), keyType, method.ValueType!);
+                BuildCacheMethod(method, locals, il, nameof(CacheHelper.Get), keyType, method.WarpedValue ? method.ValueType.GetGenericArguments()[0] : method.ValueType);
             }
             else
             {
-                BuildFunc(method, il, keyType, method.ValueType!);
+                BuildFunc(method, il, keyType, method.ValueType);
 
                 var locals = 0;
                 if (LdTtl(method, il, locals, defaultTtl)) locals++;
                 if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
-                BuildCacheMethod(method, locals, il, nameof(CacheHelper.GetOrSet), nameof(CacheHelper.GetOrSetAsync), keyType, method.ValueType!);
+                BuildCacheMethod(method, locals, il, nameof(CacheHelper.GetOrSet), keyType, method.WarpedValue ? method.ValueType.GetGenericArguments()[0] : method.ValueType);
             }
         }
 
@@ -225,8 +225,7 @@ namespace NetCache
 
             if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
-            BuildCacheMethod(method, locals, il,
-                nameof(CacheHelper.Set), nameof(CacheHelper.SetAsync),
+            BuildCacheMethod(method, locals, il, nameof(CacheHelper.Set),
                 method.Method.GetParameters()[0].ParameterType,
                 method.Method.GetParameters()[method.Value].ParameterType);
         }
@@ -236,21 +235,23 @@ namespace NetCache
             var locals = 0;
             if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
-            BuildCacheMethod(method, locals, il, nameof(CacheHelper.Remove), nameof(CacheHelper.RemoveAsync), method.Method.GetParameters()[0].ParameterType);
+            BuildCacheMethod(method, locals, il, nameof(CacheHelper.Remove), method.Method.GetParameters()[0].ParameterType);
         }
 
         private static void BuildCacheMethod(CacheMethod method, int locals, ILGenerator il,
-            string syncMethod, string asyncMethod, params Type[] typeArguments)
+            string methodName, params Type[] typeArguments)
         {
+            if (method.WarpedValue) methodName += "2";
+
             if (method.AsyncType == null)
             {
-                il.Emit(OpCodes.Callvirt, CacheHelperMethods[syncMethod].MakeGenericMethod(typeArguments));
+                il.Emit(OpCodes.Callvirt, CacheHelperMethods[methodName].MakeGenericMethod(typeArguments));
 
                 if (method.Method.ReturnType == typeof(void)) il.Emit(OpCodes.Pop);
             }
             else
             {
-                il.Emit(OpCodes.Callvirt, CacheHelperMethods[asyncMethod].MakeGenericMethod(typeArguments));
+                il.Emit(OpCodes.Callvirt, CacheHelperMethods[methodName + "Async"].MakeGenericMethod(typeArguments));
 
                 Cast(il, method, locals);
             }

@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -115,7 +116,49 @@ namespace NetCache
             _serializer.Deserialize<TV>(_provider.Get(ParseKey(key), token));
 
         public async ValueTask<TV> GetAsync<TK, TV>(TK key, CancellationToken token) =>
-            _serializer.Deserialize<TV>((await _provider.GetAsync(ParseKey(key), token).ConfigureAwait(false)))!;
+            _serializer.Deserialize<TV>(await _provider.GetAsync(ParseKey(key), token).ConfigureAwait(false))!;
+
+        public ICacheResult<TV> Get2<TK, TV>(TK key, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<TV>(Get<TK, TV>(key, token))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<TV>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
+        public async ValueTask<ICacheResult<TV>> Get2Async<TK, TV>(TK key, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<TV>(await GetAsync<TK, TV>(key, token).ConfigureAwait(false))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<TV>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
 
         [return: MaybeNull]
         public TV GetOrSet<TK, TV>(TK key, Func<TK, TimeSpan, CancellationToken, TV> func, TimeSpan expiry, CancellationToken token)
@@ -175,15 +218,141 @@ namespace NetCache
             }
         }
 
+        public ICacheResult<TV> GetOrSet2<TK, TV>(TK key, Func<TK, TimeSpan, CancellationToken, TV> func, TimeSpan expiry, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<TV>(GetOrSet(key, func, expiry, token))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<TV>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
+        public async ValueTask<ICacheResult<TV>> GetOrSet2Async<TK, TV>(TK key, Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> func, TimeSpan expiry, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<TV>(await GetOrSetAsync(key, func, expiry, token).ConfigureAwait(false))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<TV>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
         public bool Set<TK, TV>(TK key, TV value, TimeSpan expiry, When when, CancellationToken token) =>
             _provider.Set(ParseKey(key), Serialize(value), GetTtl(expiry), when, token);
 
         public ValueTask<bool> SetAsync<TK, TV>(TK key, TV value, TimeSpan expiry, When when, CancellationToken token) =>
             _provider.SetAsync(ParseKey(key), Serialize(value), GetTtl(expiry), when, token);
 
+        public ICacheResult<bool> Set2<TK, TV>(TK key, TV value, TimeSpan expiry, When when, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<bool>(Set(key, value, expiry, when, token))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<bool>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
+        public async ValueTask<ICacheResult<bool>> Set2Async<TK, TV>(TK key, TV value, TimeSpan expiry, When when, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<bool>(await SetAsync(key, value, expiry, when, token).ConfigureAwait(false))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<bool>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
         public bool Remove<TK>(TK key, CancellationToken token) => _provider.Remove(ParseKey(key), token);
 
         public ValueTask<bool> RemoveAsync<TK>(TK key, CancellationToken token) => _provider.RemoveAsync(ParseKey(key), token);
+
+        public ICacheResult<bool> Remove2<TK>(TK key, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<bool>(_provider.Remove(ParseKey(key), token))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<bool>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
+
+        public async ValueTask<ICacheResult<bool>> Remove2Async<TK>(TK key, CancellationToken token)
+        {
+            var sw = ValueStopwatch.StartNew();
+
+            try
+            {
+                return new CacheResult<bool>(await _provider.RemoveAsync(ParseKey(key), token).ConfigureAwait(false))
+                {
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                return new CacheResult<bool>(default)
+                {
+                    Exception = ExceptionDispatchInfo.Capture(ex),
+                    Elapsed = (float)sw.GetElapsedTime().TotalMilliseconds
+                };
+            }
+        }
 
         public IReadOnlyDictionary<TK, TV> Gets<TK, TV>(IReadOnlyList<TK> keys, CancellationToken cancellationToken)
         {
@@ -194,7 +363,7 @@ namespace NetCache
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var values = mkcp.Get((IEnumerable<string>)keys.Select(ParseKey), cancellationToken);
+                var values = mkcp.Get(keys.Select(ParseKey), cancellationToken);
 
                 if (values.Count != keys.Count)
                     throw new InvalidOperationException(string.Format(null, Res.Output_Length_Not_Match_Input_Length, values.Count, keys.Count));
@@ -311,7 +480,7 @@ namespace NetCache
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                return mkcp.Remove((IEnumerable<string>)keys.Select(ParseKey), cancellationToken);
+                return mkcp.Remove(keys.Select(ParseKey), cancellationToken);
             }
 
             var count = 0L;

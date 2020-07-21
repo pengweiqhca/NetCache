@@ -25,8 +25,8 @@ namespace NetCache.Tests.TestHelpers
 
         public override long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) =>
             _helper.GetOrSet(key, base.Get, ttl, cancellationToken);
-        public override Task<long> GetAsync(string key) =>
-            _helper.GetAsync<string, long>(key, default).AsTask();
+        public override Task<ICacheResult<long>> GetAsync(string key) =>
+            _helper.Get2Async<string, long>(key, default).AsTask();
         public override Task<long> GetAsync(string key, Func<long> func) =>
             _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
         public override Task<long> GetAsync(string key, Func<ValueTask<long>> func) =>

@@ -14,7 +14,7 @@ namespace NetCache.Tests.TestHelpers
 
         public virtual long? Get(string key) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public virtual long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        public abstract Task<long> GetAsync(string key);
+        public abstract Task<ICacheResult<long>> GetAsync(string key);
         public abstract Task<long> GetAsync(string key, Func<long> func);
         public abstract Task<long> GetAsync(string key, TimeSpan ttl, CancellationToken cancellationToken, Func<string, TimeSpan, CancellationToken, ValueTask<long>> func);
         public abstract Task<long> GetAsync(string key, Func<ValueTask<long>> func);

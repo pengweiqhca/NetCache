@@ -22,7 +22,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsPackageVersion)" />
 
     <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" />
   </ItemGroup>

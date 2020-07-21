@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+#if !NET46
+using Microsoft.Extensions.Hosting;
+#endif
 using NetCache.Tests.TestHelpers;
 using System;
 
@@ -8,18 +11,32 @@ namespace NetCache.Demo
     {
         private static void Main(string[] args)
         {
-            var services = new ServiceCollection().AddMemoryCache();
-
-            services.AddNetCache()
-                .AddCacheType<Int64Cache>(_ => new object[] { _ })
 #if NET46
-                .UseNewtonsoftJsonSerializer()
+            var services = new ServiceCollection();
 #else
-                .UseSystemTextJsonSerializer()
+            using var host = Host.CreateDefaultBuilder(args)
+                    .ConfigureServices(services =>
+                    {
 #endif
-                .UseMemoryCache();
+                        services.AddMemoryCache();
 
-            using var scope = services.BuildServiceProvider().CreateScope();
+                        services.AddScoped<A>();
+
+                        services.AddNetCache()
+                        .AddCacheType<Int64Cache>(_ => new object[] { _ })
+                        .UseMemoryCache()
+#if NET46
+                .UseNewtonsoftJsonSerializer();
+
+            var root = services.BuildServiceProvider(true);
+#else
+                        .UseSystemTextJsonSerializer();
+                    })
+                    .Build();
+
+            var root = host.Services;
+#endif
+            using var scope = root.CreateScope();
 
             var obj = scope.ServiceProvider.GetRequiredService<Int64Cache>();
 

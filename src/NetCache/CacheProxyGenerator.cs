@@ -21,7 +21,7 @@ namespace NetCache
                 .ToDictionary(g => g.Key, g => g.First());
 
         private readonly ModuleBuilder _mb = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName { Name = "NetCache.Proxies" }, AssemblyBuilderAccess.Run).DefineDynamicModule("Proxies");
-        private readonly ConcurrentDictionary<Type, Type> _proxies = new ();
+        private readonly ConcurrentDictionary<Type, Type> _proxies = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type CreateProxyType(Type type)
@@ -62,6 +62,8 @@ namespace NetCache
                 il.Emit(OpCodes.Ldfld, fb);
                 il.Emit(OpCodes.Ldarg_1);
 
+                DefineGenericParameters(mb, method.Method);
+
                 switch (method.Operation)
                 {
                     case CacheOperation.Get:
@@ -86,6 +88,41 @@ namespace NetCache
 #else
             return tb.CreateType()!;
 #endif
+        }
+
+        private static void DefineGenericParameters(MethodBuilder mb, MethodInfo method)
+        {
+            if (!method.IsGenericMethod) return;
+
+            var gas = method.GetGenericArguments();
+
+            var gtpb = mb.DefineGenericParameters(gas.Select((_, index) => "T" + index).ToArray());
+            for (var index = 0; index < gas.Length; index++)
+            {
+                gtpb[index].SetGenericParameterAttributes(gas[index].GenericParameterAttributes);
+
+                gtpb[index].SetBaseTypeConstraint(gas[index].BaseType);
+
+                gtpb[index].SetInterfaceConstraints(gas[index].GetInterfaces());
+
+                foreach (var attr in gas[index].GetCustomAttributesData())
+                {
+                    var cab = attr.NamedArguments == null ?
+                        new CustomAttributeBuilder(
+                            attr.Constructor,
+                            attr.ConstructorArguments.Select(a => a.Value).ToArray())
+                        : new CustomAttributeBuilder(
+                            attr.Constructor,
+                            attr.ConstructorArguments.Select(a => a.Value).ToArray(),
+                            attr.NamedArguments.Where(a => !a.IsField).Select(a => (PropertyInfo)a.MemberInfo).ToArray(),
+                            attr.NamedArguments.Where(a => !a.IsField).Select(a => a.TypedValue.Value).ToArray(),
+                            attr.NamedArguments.Where(a => a.IsField).Select(a => (FieldInfo)a.MemberInfo).ToArray(),
+                            attr.NamedArguments.Where(a => a.IsField).Select(a => a.TypedValue.Value).ToArray()
+                        );
+
+                    gtpb[index].SetCustomAttribute(cab);
+                }
+            }
         }
 
         private static FieldBuilder MakeField(TypeBuilder tb, CacheType type)

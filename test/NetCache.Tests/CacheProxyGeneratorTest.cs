@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
-using Moq;
-using NetCache.Tests.TestHelpers;
+﻿using NetCache.Tests.TestHelpers;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -66,6 +63,12 @@ namespace NetCache.Tests
                     .Where(il => il.opcode != OpCodes.Nop));
         }
 #endif
+        [Fact]
+        public void GenericTest()
+        {
+            Generator.CreateProxyType<GenericMethodCache>();
+            Generator.CreateProxyType<GenericTypeCache<string>>();
+        }
 #if NETCOREAPP3_1
         [Fact]
         public void InterfaceTest()

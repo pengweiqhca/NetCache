@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -28,6 +27,19 @@ namespace NetCache.Tests
             var agg = Assert.Throws<AggregateException>(() => CacheTypeResolver.Resolve(typeof(TypeTestClass2)));
             Assert.Single((IEnumerable)agg.InnerExceptions);
             Assert.Equal("不支持的抽象方法Test", agg.InnerException!.Message);
+        }
+
+        [Theory]
+        [InlineData(typeof(GenericMethodCache))]
+        [InlineData(typeof(GenericTypeCache<string>))]
+        public void GenericTest(Type type)
+        {
+            var info = CacheTypeResolver.Resolve(type);
+
+            Assert.Equal(2, info.Methods.Count);
+
+            Assert.Equal(CacheOperation.Get, info.Methods[0].Operation);
+            Assert.Equal(CacheOperation.Set, info.Methods[1].Operation);
         }
 
         public abstract class TypeTestClass

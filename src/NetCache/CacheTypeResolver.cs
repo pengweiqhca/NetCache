@@ -297,11 +297,11 @@ namespace NetCache
             defaultTtl = 0;
 
             var attr = type.GetCustomAttribute<CacheAttribute>(true);
-            if (attr == null) return type.FullName;
+            if (attr == null) return type.FullName ?? type.Name;
 
             defaultTtl = attr.TtlSecond;
 
-            return attr.CacheName;
+            return attr.CacheName ?? type.FullName ?? type.Name;
         }
 
         private static Type GetSyncType(Type type, out bool isAsync)

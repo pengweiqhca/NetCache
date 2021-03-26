@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace NetCache
 {
-    internal struct ValueStopwatch
+    internal readonly struct ValueStopwatch
     {
         private static readonly double TimestampToTicks = TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
 

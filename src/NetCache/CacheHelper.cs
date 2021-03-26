@@ -515,5 +515,21 @@ namespace NetCache
 
             return count;
         }
+
+        public void Dispose() => (_provider as IDisposable)?.Dispose();
+#if !NET45
+        public async ValueTask DisposeAsync()
+        {
+            switch (_provider)
+            {
+                case IAsyncDisposable ad:
+                    await ad.DisposeAsync().ConfigureAwait(false);
+                    break;
+                case IDisposable d:
+                    d.Dispose();
+                    break;
+            }
+        }
+#endif
     }
 }

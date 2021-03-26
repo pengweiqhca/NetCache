@@ -12,7 +12,7 @@ namespace NetCache
 {
     public class CacheProxyGenerator : ICacheProxyGenerator
     {
-        private static readonly MethodInfo ConvertMethod = typeof(CacheProxyGenerator).GetMethod(nameof(Convert), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo ConvertMethod = typeof(CacheProxyGenerator).GetMethod(nameof(Convert), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         private static readonly IReadOnlyDictionary<string, MethodInfo> CacheHelperMethods =
             typeof(CacheHelper).GetMethods()
@@ -21,7 +21,7 @@ namespace NetCache
                 .ToDictionary(g => g.Key, g => g.First());
 
         private readonly ModuleBuilder _mb = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName { Name = "NetCache.Proxies" }, AssemblyBuilderAccess.Run).DefineDynamicModule("Proxies");
-        private readonly ConcurrentDictionary<Type, Type> _proxies = new ConcurrentDictionary<Type, Type>();
+        private readonly ConcurrentDictionary<Type, Type> _proxies = new ();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type CreateProxyType(Type type)
@@ -185,7 +185,7 @@ namespace NetCache
                     2 => typeof(Func<,>).MakeGenericType(result),
                     3 => typeof(Func<,,>).MakeGenericType(result),
                     4 => typeof(Func<,,,>).MakeGenericType(result),
-                    _ => throw CacheTypeResolver.ParameterException(method.Method.DeclaringType, method.Method)
+                    _ => throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method)
                 };
 
                 il.Emit(OpCodes.Newobj, funcType.GetConstructors()[0]);
@@ -197,7 +197,7 @@ namespace NetCache
             if (args.Length > 1) arg1 = args[0] == keyType ? typeof(object) : args[0];
             if (args.Length > 2) arg2 = args[1] == keyType ? typeof(object) : args[1];
             if (args.Length > 3) arg3 = args[2] == keyType ? typeof(object) : args[2];
-            if (args.Length > 4) throw CacheTypeResolver.ParameterException(method.Method.DeclaringType, method.Method);
+            if (args.Length > 4) throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method);
 
             if (args[args.Length - 1].IsGenericType)
             {
@@ -322,8 +322,8 @@ namespace NetCache
                 if (type == typeof(DateTime) ||
                     type == typeof(DateTimeOffset))
                 {
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(DateTime.Now)).GetMethod);
-                    il.Emit(OpCodes.Call, type.GetMethod("op_Subtraction", new[] { type, type }));
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(DateTime.Now))!.GetMethod);
+                    il.Emit(OpCodes.Call, type.GetMethod("op_Subtraction", new[] { type, type })!);
 
                     return false;
                 }
@@ -334,14 +334,14 @@ namespace NetCache
                     var falseLabel = il.DefineLabel();
                     var endLabel = il.DefineLabel();
 
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.HasValue)).GetMethod);
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.HasValue))!.GetMethod);
                     il.Emit(OpCodes.Brfalse_S, falseLabel);
 
                     il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.Value)).GetMethod);
+                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.Value))!.GetMethod);
 
-                    il.Emit(OpCodes.Call, rawType.GetProperty(nameof(DateTime.Now)).GetMethod);
-                    il.Emit(OpCodes.Call, rawType.GetMethod("op_Subtraction", new[] { rawType, rawType }));
+                    il.Emit(OpCodes.Call, rawType.GetProperty(nameof(DateTime.Now))!.GetMethod);
+                    il.Emit(OpCodes.Call, rawType.GetMethod("op_Subtraction", new[] { rawType, rawType })!);
                     il.Emit(OpCodes.Br_S, endLabel);
 
                     il.MarkLabel(falseLabel);
@@ -358,9 +358,9 @@ namespace NetCache
                     il.Emit(OpCodes.Call,
                         type.GetMethod(nameof(Nullable<TimeSpan>.GetValueOrDefault),
 #if NET45
-                            new Type[0]));
+                            new Type[0])!);
 #else
-                            Array.Empty<Type>()));
+                            Array.Empty<Type>())!);
 #endif
                 if ((rawType ?? type) == typeof(TimeSpan)) return false;
 
@@ -378,7 +378,7 @@ namespace NetCache
                 }
             }
 
-            il.Emit(OpCodes.Call, typeof(TimeSpan).GetMethod(nameof(TimeSpan.FromSeconds)));
+            il.Emit(OpCodes.Call, typeof(TimeSpan).GetMethod(nameof(TimeSpan.FromSeconds))!);
 
             return false;
         }
@@ -418,7 +418,7 @@ namespace NetCache
 
                 il.Emit(OpCodes.Ldloca_S, locals);
 
-                il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask)));
+                il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
             }
         }
 

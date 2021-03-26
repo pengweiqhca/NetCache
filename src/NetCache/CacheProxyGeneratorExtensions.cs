@@ -21,6 +21,7 @@ namespace NetCache
         {
             if (generator == null) throw new ArgumentNullException(nameof(generator));
             if (options == null) throw new ArgumentNullException(nameof(options));
+            if (additionalParameters == null) throw new ArgumentNullException(nameof(additionalParameters));
 
             var args = new object[6 + additionalParameters.Length];
 

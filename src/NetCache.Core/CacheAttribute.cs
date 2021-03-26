@@ -9,7 +9,7 @@ namespace NetCache
         private int _ttlSecond;
 
         /// <summary>Cache name</summary>
-        public string CacheName { get; }
+        public string? CacheName { get; }
 
         /// <summary>Default ttl if method don't have ttl parameter or ttl less than 1</summary>
         public int TtlSecond
@@ -23,12 +23,13 @@ namespace NetCache
             }
         }
 
+        public CacheAttribute() { }
+
         /// <summary>ctor</summary>
         /// <param name="cacheName">Cache name</param>
         public CacheAttribute(string cacheName)
         {
-            if (string.IsNullOrEmpty(cacheName))
-                throw new ArgumentNullException(nameof(cacheName));
+            if (string.IsNullOrEmpty(cacheName)) throw new ArgumentNullException(nameof(cacheName));
 
             CacheName = cacheName;
         }

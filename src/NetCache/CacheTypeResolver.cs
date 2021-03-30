@@ -21,27 +21,9 @@ namespace NetCache
                 var canBeOverride = method.IsVirtual && !method.IsFinal;
                 if (!canBeOverride || method.DeclaringType == typeof(object)) continue;
 
-                var attr = method.GetCustomAttribute<CacheMethodAttribute>(true);
-                if (attr == null)
-                    if (method.Name.StartsWith(nameof(CacheOperation.Set), StringComparison.OrdinalIgnoreCase))
-                    {
-                        attr = new CacheMethodAttribute(CacheOperation.Set);
-                    }
-                    else if (method.Name.StartsWith(nameof(CacheOperation.Get), StringComparison.OrdinalIgnoreCase))
-                    {
-                        attr = new CacheMethodAttribute(CacheOperation.Get);
-                    }
-                    else if (method.Name.StartsWith(nameof(CacheOperation.Remove), StringComparison.OrdinalIgnoreCase) ||
-                             method.Name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase))
-                    {
-                        attr = new CacheMethodAttribute(CacheOperation.Remove);
-                    }
-                    else
-                    {
-                        attr = new CacheMethodAttribute(CacheOperation.Ignore);
-                    }
+                var operation = GetOperation(method);
 
-                if (attr.Operation == CacheOperation.Ignore)
+                if (operation == CacheOperation.Ignore)
                 {
                     if (method.IsAbstract) exceptions.Add(new InvalidOperationException($"不支持的抽象方法{method.Name}"));
 
@@ -49,7 +31,7 @@ namespace NetCache
                 }
 
                 CacheMethod? cm = null;
-                switch (attr.Operation)
+                switch (operation)
                 {
                     case CacheOperation.Get:
                         cm = ResolveGet(method);
@@ -64,7 +46,7 @@ namespace NetCache
                         if (cm == null) exceptions.Add(ParameterException(type, method));
                         break;
                     default:
-                        exceptions.Add(new InvalidOperationException($"{method.Name}不支持的操作{attr.Operation}"));
+                        exceptions.Add(new InvalidOperationException($"{method.Name}不支持的操作{operation}"));
                         break;
                 }
 
@@ -74,6 +56,21 @@ namespace NetCache
             if (exceptions.Count > 0) throw new AggregateException(exceptions);
 
             return new CacheType(GetCacheName(type, out var defaultTtl), type, methods) { DefaultTtl = defaultTtl };
+        }
+
+        private static CacheOperation GetOperation(MemberInfo method)
+        {
+            var attr = method.GetCustomAttribute<CacheMethodAttribute>(true);
+            if (attr != null) return attr.Operation;
+
+            if (method.Name.StartsWith(nameof(CacheOperation.Set), StringComparison.OrdinalIgnoreCase)) return CacheOperation.Set;
+
+            if (method.Name.StartsWith(nameof(CacheOperation.Get), StringComparison.OrdinalIgnoreCase)) return CacheOperation.Get;
+
+            return method.Name.StartsWith(nameof(CacheOperation.Remove), StringComparison.OrdinalIgnoreCase) ||
+                   method.Name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase)
+                ? CacheOperation.Remove
+                : CacheOperation.Ignore;
         }
 
         public static CacheMethod? ResolveGet(MethodInfo method)

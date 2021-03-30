@@ -1,5 +1,6 @@
 ﻿namespace NetCache.Tests.TestHelpers
 {
+    [Cache]
     public abstract class GenericTypeCache<T>
     {
         public virtual T? Get(string key) => default;

@@ -341,8 +341,11 @@ namespace NetCache.Tests
                 Assert.Equal(1, method.Ttl);
                 Assert.Equal(0, method.CancellationToken);
             }
-
+#if NETCOREAPP3_1_OR_GREATER
+            Assert.Null(CacheTypeResolver.ResolveGet(methods[^1]));
+#else
             Assert.Null(CacheTypeResolver.ResolveGet(methods[methods.Length - 1]));
+#endif
         }
 
         [Fact]

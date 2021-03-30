@@ -9,9 +9,9 @@ namespace NetCache.Tests.TestHelpers
     {
         public const string CacheName = "long";
         public const int DefaultTtl = 10;
-
+#pragma warning disable IDE0060 // 删除未使用的参数
         protected Int64Cache(object any) { }
-
+#pragma warning restore IDE0060 // 删除未使用的参数
         public virtual long? Get(string key) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public virtual long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
         public abstract Task<ICacheResult<long>> GetAsync(string key);

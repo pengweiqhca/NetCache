@@ -45,8 +45,13 @@ namespace NetCache.Tests.TestHelpers
 
         public override ValueTask<bool> SetAsync(string key, string value) =>
             _helper.SetAsync(key, value, TimeSpan.FromSeconds(DefaultTtl), When.Always, default);
-        public override ValueTask SetAsync(string key, string value, CancellationToken cancellationToken) =>
-            CacheProxyGenerator.Convert(_helper.SetAsync(key, value, TimeSpan.FromSeconds(DefaultTtl), When.Always, cancellationToken));
+
+        public override ValueTask SetAsync(string key, string value, CancellationToken cancellationToken)
+        {
+            var task = _helper.SetAsync(key, value, TimeSpan.FromSeconds(DefaultTtl), When.Always, cancellationToken);
+
+            return task.IsCompletedSuccessfully ? default : new ValueTask(task.AsTask());
+        }
 
         public override void Delete(string key) => _helper.Remove(key, default);
         public override Task RemoveAsync(string key) => _helper.RemoveAsync(key, default).AsTask();

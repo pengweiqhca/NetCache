@@ -66,6 +66,7 @@ namespace NetCache.Tests
         [Fact]
         public void GenericTest()
         {
+            Generator.CreateProxyType<IGenericInterfaceCache<string>>();
             Generator.CreateProxyType<GenericMethodCache>();
             Generator.CreateProxyType<GenericTypeCache<string>>();
         }

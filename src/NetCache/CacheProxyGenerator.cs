@@ -12,8 +12,6 @@ namespace NetCache
 {
     public class CacheProxyGenerator : ICacheProxyGenerator
     {
-        private static readonly MethodInfo ConvertMethod = typeof(CacheProxyGenerator).GetMethod(nameof(Convert), BindingFlags.NonPublic | BindingFlags.Static)!;
-
         private static readonly IReadOnlyDictionary<string, MethodInfo> CacheHelperMethods =
             typeof(CacheHelper).GetMethods()
                 .Where(m => m.DeclaringType == typeof(CacheHelper))
@@ -445,20 +443,43 @@ namespace NetCache
 
             if (returnType == method.Method.ReturnType && !(method.Method.ReturnType == typeof(ValueTask) && method.RawType != null)) return;
 
-            if (method.Method.ReturnType == typeof(ValueTask))
-                il.Emit(OpCodes.Call, ConvertMethod.MakeGenericMethod(method.RawType));
-            else
-            {
-                il.DeclareLocal(returnType);
+            il.DeclareLocal(returnType);
 
-                Stloc(il, locals);
+            Stloc(il, locals);
+
+            il.Emit(OpCodes.Ldloca_S, locals);
+
+            if (method.Method.ReturnType == typeof(ValueTask))
+            {
+                var trueLabel = il.DefineLabel();
+                var endLabel = il.DefineLabel();
+
+                il.Emit(OpCodes.Call, returnType.GetProperty(nameof(ValueTask.IsCompletedSuccessfully))!.GetMethod);
+                il.Emit(OpCodes.Brtrue_S, trueLabel);
 
                 il.Emit(OpCodes.Ldloca_S, locals);
+                il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
+                il.Emit(OpCodes.Newobj, typeof(ValueTask).GetConstructor(new[] { typeof(Task) })!);
 
+                il.Emit(OpCodes.Br_S, endLabel);
+
+                il.MarkLabel(trueLabel);
+                il.DeclareLocal(typeof(ValueTask));
+                il.Emit(OpCodes.Ldloca_S, ++locals);
+                il.Emit(OpCodes.Initobj, typeof(ValueTask));
+                Ldloc(il, locals);
+
+                il.DeclareLocal(typeof(ValueTask));
+                Stloc(il, ++locals);
+                il.Emit(OpCodes.Br_S, endLabel);
+                Ldloc(il, locals);
+
+                il.MarkLabel(endLabel);
+            }
+            else
+            {
                 il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
             }
         }
-
-        internal static async ValueTask Convert<T>(ValueTask<T> task) => await task.ConfigureAwait(false);
     }
 }

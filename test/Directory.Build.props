@@ -3,7 +3,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="1.*">
+    <PackageReference Include="coverlet.collector" Version="3.*">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

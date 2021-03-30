@@ -57,11 +57,6 @@
     <None Update="FuncHelper.Class.tt">
       <DependentUpon>FuncHelper.tt</DependentUpon>
     </None>
-    <Code Update="FuncHelper.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>FuncHelper.tt</DependentUpon>
-    </Code>
   </ItemGroup>
 
 </Project>

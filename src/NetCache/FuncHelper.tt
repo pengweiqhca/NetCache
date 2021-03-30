@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal static partial class FuncHelper
-    {
 <#  var parameters = new Dictionary<string, string>
     {
         { "TK", "key" },
@@ -43,48 +41,101 @@ namespace NetCache
             return order;
         })
         .ToArray(); #>
+    internal static partial class FuncHelper
+    {
         #region Sync Wrap
 
-<#  foreach(var types in funcs)
+<#  for (var index = 0; index < funcs.Length; index++)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, TV> Wrap<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>TV> func) =>
-            (<#= string.Join(", ", parameters.Values) #>) => func(<#= string.Join(", ", types.Select(p => parameters[p])) #>);
+        public static Func<<#= string.Join(", ", parameterTypes) #>, TV> Wrap<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV> func) =>
+            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 0 #>;
 
 <#  } #>
         #endregion
 
         #region Async Wrap
 
-<#  foreach(var types in funcs)
+<#  for (var index = 0; index < funcs.Length; index++)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>TV> func) =>
-            (<#= string.Join(", ", parameters.Values) #>) => new ValueTask<TV>(func(<#= string.Join(", ", types.Select(p => parameters[p])) #>));
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV> func) =>
+            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 1 #>;
 
 <#  } #>
         #endregion
 
         #region Task Wrap
 
-<#  foreach(var types in funcs)
+<#  for (var index = 0; index < funcs.Length; index++)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>Task<TV>> func) =>
-            (<#= string.Join(", ", parameters.Values) #>) => new ValueTask<TV>(func(<#= string.Join(", ", types.Select(p => parameters[p])) #>));
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>Task<TV>> func) =>
+            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 2 #>;
 
 <#  } #>
         #endregion
 
         #region ValueTask Wrap
 
-<#  foreach(var types in funcs)
+<#  for (var index = 0; index < funcs.Length; index++)
     { #>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", types.Length > 0 ? types.Union(new [] { "" }) : types) #>ValueTask<TV>> func) =>
-            (<#= string.Join(", ", parameters.Values) #>) => func(<#= string.Join(", ", types.Select(p => parameters[p])) #>);
+        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>ValueTask<TV>> func) =>
+            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 3 #>;
 
 <#  } #>
         #endregion
+
+        private class Adapter<TK, TV>
+        {
+            private object _func;
+
+            public Adapter(object func) => _func = func;
+
+            #region Sync Wrap
+
+<#  for (var index = 0; index < funcs.Length; index++)
+    { #>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public TV Wrap<#= index + funcs.Length * 0 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
+                ((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>);
+
+<#  } #>
+            #endregion
+
+            #region Async Wrap
+
+<#  for (var index = 0; index < funcs.Length; index++)
+    { #>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ValueTask<TV> Wrap<#= index + funcs.Length * 1 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
+                new ValueTask<TV>(((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>));
+
+<#  } #>
+            #endregion
+
+            #region Task Wrap
+
+<#  for (var index = 0; index < funcs.Length; index++)
+    { #>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ValueTask<TV> Wrap<#= index + funcs.Length *  2 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
+                new ValueTask<TV>(((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>Task<TV>>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>));
+
+<#  } #>
+            #endregion
+
+            #region ValueTask Wrap
+
+<#  for (var index = 0; index < funcs.Length; index++)
+    { #>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ValueTask<TV> Wrap<#= index + funcs.Length * 3 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
+                ((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>ValueTask<TV>>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>);
+
+<#  } #>
+            #endregion
+        }
     }
 }

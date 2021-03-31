@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal static partial class FuncHelper
+    internal partial class FuncHelper
     {
-        private static readonly IDictionary<FuncType, MethodInfo> WrapMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
-        private static readonly IDictionary<FuncType, MethodInfo> WrapAsyncMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
+        private readonly IDictionary<FuncType, MethodInfo> _wrapMethods;
+        private readonly IDictionary<FuncType, MethodInfo> _wrapAsyncMethods;
 
         private struct FuncType
         {
@@ -49,10 +50,13 @@ namespace NetCache
             }
         }
 
-        static FuncHelper()
+        private FuncHelper(Type helperType)
         {
-            foreach (var method in typeof(FuncHelper).GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.Name.StartsWith(nameof(Wrap), StringComparison.Ordinal)))
+            _wrapMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
+            _wrapAsyncMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
+
+            foreach (var method in helperType.GetMethods()
+                .Where(m => m.Name.StartsWith("Wrap", StringComparison.Ordinal)))
             {
                 var args = method.GetParameters()[0].ParameterType.GenericTypeArguments;
                 Type? arg1 = null, arg2 = null, arg3 = null, returnArg = null;
@@ -67,7 +71,7 @@ namespace NetCache
                 if (args.Length > 2) arg2 = args[1].IsGenericParameter ? typeof(object) : args[1];
                 if (args.Length > 3) arg3 = args[2].IsGenericParameter ? typeof(object) : args[2];
 
-                (method.Name == nameof(Wrap) ? WrapMethods : WrapAsyncMethods)[new FuncType
+                (method.Name == "Wrap" ? _wrapMethods : _wrapAsyncMethods)[new FuncType
                 {
                     Arg1 = arg1,
                     Arg2 = arg2,
@@ -77,8 +81,10 @@ namespace NetCache
             }
         }
 
-        public static MethodInfo GetWrapMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
-            WrapMethods[new FuncType
+        public static FuncHelper CreateHelper(ModuleBuilder module) => new(CreateType(module));
+
+        public MethodInfo GetWrapMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
+            _wrapMethods[new FuncType
             {
                 Arg1 = arg1,
                 Arg2 = arg2,
@@ -86,8 +92,8 @@ namespace NetCache
                 ReturnArg = returnArg
             }];
 
-        public static MethodInfo GetWrapAsyncMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
-            WrapAsyncMethods[new FuncType
+        public MethodInfo GetWrapAsyncMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
+            _wrapAsyncMethods[new FuncType
             {
                 Arg1 = arg1,
                 Arg2 = arg2,

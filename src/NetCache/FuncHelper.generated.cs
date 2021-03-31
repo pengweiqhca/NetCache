@@ -1,561 +1,2468 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal static partial class FuncHelper
+    internal partial class FuncHelper
     {
-        #region Sync Wrap
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TV> func) =>
-            new Adapter<TK, TV>(func).Wrap0;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap1;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap2;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap3;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TK, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap4;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TK, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap5;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TimeSpan, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap6;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TimeSpan, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap7;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<CancellationToken, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap8;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<CancellationToken, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap9;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TK, TimeSpan, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap10;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TK, CancellationToken, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap11;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TimeSpan, TK, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap12;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<TimeSpan, CancellationToken, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap13;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<CancellationToken, TK, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap14;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, TV> Wrap<TK, TV>(Func<CancellationToken, TimeSpan, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap15;
-
-        #endregion
-
-        #region Async Wrap
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TV> func) =>
-            new Adapter<TK, TV>(func).Wrap16;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap17;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap18;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap19;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap20;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap21;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap22;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap23;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap24;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap25;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap26;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap27;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, CancellationToken, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap28;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap29;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, TimeSpan, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap30;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, TK, TV> func) =>
-            new Adapter<TK, TV>(func).Wrap31;
-
-        #endregion
-
-        #region Task Wrap
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap32;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap33;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap34;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap35;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap36;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap37;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap38;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap39;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap40;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap41;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, CancellationToken, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap42;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, TimeSpan, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap43;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, CancellationToken, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap44;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, TK, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap45;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, TimeSpan, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap46;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, TK, Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap47;
-
-        #endregion
-
-        #region ValueTask Wrap
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap48;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap49;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap50;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap51;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap52;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap53;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap54;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap55;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap56;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap57;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap58;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TK, CancellationToken, TimeSpan, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap59;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, TK, CancellationToken, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap60;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<TimeSpan, CancellationToken, TK, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap61;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TK, TimeSpan, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap62;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<TK, TimeSpan, CancellationToken, ValueTask<TV>> WrapAsync<TK, TV>(Func<CancellationToken, TimeSpan, TK, ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap63;
-
-        #endregion
-
-        private class Adapter<TK, TV>
+        public static Type CreateType(ModuleBuilder module)
         {
-            private object _func;
+            var proxy = module.GetType("NetCache.FuncAdapter@");
+            if (proxy != null) return proxy;
 
-            public Adapter(object func) => _func = func;
+            var type = module.DefineType("NetCache.FuncAdapter@", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Public | TypeAttributes.Sealed, typeof(object));
 
-            #region Sync Wrap
+            var adapter = type.DefineNestedType("Adapter", TypeAttributes.NestedPrivate | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, typeof(object));
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap0(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TV>)_func)();
+            GenericTypeParameterBuilder[] mp;
+            var gp = adapter.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap1(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, TV>)_func)(key);
+            var func = adapter.DefineField("_func", typeof(object), FieldAttributes.Private);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap2(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, TV>)_func)(expiry);
+            MethodBuilder am, m;
+            var ctor = adapter.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, new[] { typeof(object) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap3(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TV>)_func)(cancellationToken);
+            var il = ctor.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap4(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, TimeSpan, TV>)_func)(key, expiry);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, typeof(object).GetConstructors().First());
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Stfld, func);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap5(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, CancellationToken, TV>)_func)(key, cancellationToken);
+            var aggressiveInlining = new CustomAttributeBuilder(typeof(MethodImplAttribute).GetConstructor(new[] { typeof(MethodImplOptions) }), new object[] { MethodImplOptions.AggressiveInlining });
+            var taskReturnType = typeof(Task<>).MakeGenericType(gp[1].UnderlyingSystemType);
+            var valueTaskReturnType = typeof(ValueTask<>).MakeGenericType(gp[1].UnderlyingSystemType);
+            var syncCtor = typeof(ValueTask<>).GetConstructors().First(c => !c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
+            var asyncCtor = typeof(ValueTask<>).GetConstructors().First(c => c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap6(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, TK, TV>)_func)(expiry, key);
+            var funcCtor = typeof(Func<,,,>).GetConstructors().First();
+            var invoke0 = typeof(Func<>).GetMethod("Invoke");
+            var invoke1 = typeof(Func<,>).GetMethod("Invoke");
+            var invoke2 = typeof(Func<,,>).GetMethod("Invoke");
+            var invoke3 = typeof(Func<,,,>).GetMethod("Invoke");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap7(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, CancellationToken, TV>)_func)(expiry, cancellationToken);
+            Type key;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap8(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TK, TV>)_func)(cancellationToken, key);
+            key = gp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap9(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TimeSpan, TV>)_func)(cancellationToken, expiry);
+            am = adapter.DefineMethod("Wrap0", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap10(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, TimeSpan, CancellationToken, TV>)_func)(key, expiry, cancellationToken);
+            am.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap11(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, CancellationToken, TimeSpan, TV>)_func)(key, cancellationToken, expiry);
+            il = am.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap12(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, TK, CancellationToken, TV>)_func)(expiry, key, cancellationToken);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<>).MakeGenericType(gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Callvirt, invoke0);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap13(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, CancellationToken, TK, TV>)_func)(expiry, cancellationToken, key);
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap14(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TK, TimeSpan, TV>)_func)(cancellationToken, key, expiry);
+            mp = m.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap15(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TimeSpan, TK, TV>)_func)(cancellationToken, expiry, key);
+            key = mp[0].UnderlyingSystemType;
 
-            #endregion
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<>).MakeGenericType(mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-            #region Async Wrap
+            m.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap16(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TV>)_func)());
+            il = m.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap17(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, TV>)_func)(key));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap18(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, TV>)_func)(expiry));
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap19(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TV>)_func)(cancellationToken));
+            key = gp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap20(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, TimeSpan, TV>)_func)(key, expiry));
+            am = adapter.DefineMethod("Wrap1", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap21(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, CancellationToken, TV>)_func)(key, cancellationToken));
+            am.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap22(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, TK, TV>)_func)(expiry, key));
+            il = am.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap23(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, CancellationToken, TV>)_func)(expiry, cancellationToken));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap24(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TK, TV>)_func)(cancellationToken, key));
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap25(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TimeSpan, TV>)_func)(cancellationToken, expiry));
+            mp = m.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap26(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, TimeSpan, CancellationToken, TV>)_func)(key, expiry, cancellationToken));
+            key = mp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap27(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, CancellationToken, TimeSpan, TV>)_func)(key, cancellationToken, expiry));
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap28(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, TK, CancellationToken, TV>)_func)(expiry, key, cancellationToken));
+            m.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap29(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, CancellationToken, TK, TV>)_func)(expiry, cancellationToken, key));
+            il = m.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap30(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TK, TimeSpan, TV>)_func)(cancellationToken, key, expiry));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap31(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TimeSpan, TK, TV>)_func)(cancellationToken, expiry, key));
+            il.Emit(OpCodes.Ret);
 
-            #endregion
+            key = gp[0].UnderlyingSystemType;
 
-            #region Task Wrap
+            am = adapter.DefineMethod("Wrap2", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap32(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<Task<TV>>)_func)());
+            am.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap33(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, Task<TV>>)_func)(key));
+            il = am.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap34(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, Task<TV>>)_func)(expiry));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap35(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, Task<TV>>)_func)(cancellationToken));
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap36(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, TimeSpan, Task<TV>>)_func)(key, expiry));
+            mp = m.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap37(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, CancellationToken, Task<TV>>)_func)(key, cancellationToken));
+            key = mp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap38(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, TK, Task<TV>>)_func)(expiry, key));
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap39(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, CancellationToken, Task<TV>>)_func)(expiry, cancellationToken));
+            m.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap40(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TK, Task<TV>>)_func)(cancellationToken, key));
+            il = m.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap41(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TimeSpan, Task<TV>>)_func)(cancellationToken, expiry));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap42(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, TimeSpan, CancellationToken, Task<TV>>)_func)(key, expiry, cancellationToken));
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap43(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TK, CancellationToken, TimeSpan, Task<TV>>)_func)(key, cancellationToken, expiry));
+            key = gp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap44(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, TK, CancellationToken, Task<TV>>)_func)(expiry, key, cancellationToken));
+            am = adapter.DefineMethod("Wrap3", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap45(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<TimeSpan, CancellationToken, TK, Task<TV>>)_func)(expiry, cancellationToken, key));
+            am.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap46(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TK, TimeSpan, Task<TV>>)_func)(cancellationToken, key, expiry));
+            il = am.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap47(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                new ValueTask<TV>(((Func<CancellationToken, TimeSpan, TK, Task<TV>>)_func)(cancellationToken, expiry, key));
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
 
-            #endregion
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-            #region ValueTask Wrap
+            mp = m.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap48(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<ValueTask<TV>>)_func)();
+            key = mp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap49(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, ValueTask<TV>>)_func)(key);
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap50(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, ValueTask<TV>>)_func)(expiry);
+            m.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap51(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, ValueTask<TV>>)_func)(cancellationToken);
+            il = m.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap52(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, TimeSpan, ValueTask<TV>>)_func)(key, expiry);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap53(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, CancellationToken, ValueTask<TV>>)_func)(key, cancellationToken);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap54(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, TK, ValueTask<TV>>)_func)(expiry, key);
+            key = gp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap55(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, CancellationToken, ValueTask<TV>>)_func)(expiry, cancellationToken);
+            am = adapter.DefineMethod("Wrap4", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap56(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TK, ValueTask<TV>>)_func)(cancellationToken, key);
+            am.SetCustomAttribute(aggressiveInlining);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap57(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TimeSpan, ValueTask<TV>>)_func)(cancellationToken, expiry);
+            il = am.GetILGenerator();
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap58(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, TimeSpan, CancellationToken, ValueTask<TV>>)_func)(key, expiry, cancellationToken);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap59(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TK, CancellationToken, TimeSpan, ValueTask<TV>>)_func)(key, cancellationToken, expiry);
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap60(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, TK, CancellationToken, ValueTask<TV>>)_func)(expiry, key, cancellationToken);
+            mp = m.DefineGenericParameters("TK", "TV");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap61(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<TimeSpan, CancellationToken, TK, ValueTask<TV>>)_func)(expiry, cancellationToken, key);
+            key = mp[0].UnderlyingSystemType;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap62(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TK, TimeSpan, ValueTask<TV>>)_func)(cancellationToken, key, expiry);
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap63(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
-                ((Func<CancellationToken, TimeSpan, TK, ValueTask<TV>>)_func)(cancellationToken, expiry, key);
+            m.SetCustomAttribute(aggressiveInlining);
 
-            #endregion
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap5", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap6", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap7", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap8", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap9", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap10", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap11", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap12", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap13", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap14", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap15", MethodAttributes.Public | MethodAttributes.HideBySig, gp[1].UnderlyingSystemType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("Wrap", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap16", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<>).MakeGenericType(gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Callvirt, invoke0);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<>).MakeGenericType(mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap17", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap18", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap19", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap20", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap21", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap22", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap23", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap24", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap25", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap26", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap27", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap28", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap29", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap30", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap31", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, gp[1].UnderlyingSystemType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, syncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, mp[1].UnderlyingSystemType));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap32", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<>).MakeGenericType(taskReturnType));
+            il.Emit(OpCodes.Callvirt, invoke0);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<>).MakeGenericType(typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap33", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(key, taskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(key, typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap34", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(TimeSpan), taskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(TimeSpan), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap35", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(CancellationToken), taskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(CancellationToken), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap36", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), taskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap37", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), taskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap38", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, taskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap39", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), taskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap40", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, taskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap41", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), taskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap42", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), taskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap43", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), taskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap44", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), taskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap45", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, taskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap46", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), taskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap47", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, taskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Newobj, asyncCtor);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap48", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<>).MakeGenericType(valueTaskReturnType));
+            il.Emit(OpCodes.Callvirt, invoke0);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<>).MakeGenericType(typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap49", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(key, valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(key, typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap50", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(TimeSpan), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(TimeSpan), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap51", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,>).MakeGenericType(typeof(CancellationToken), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke1);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,>).MakeGenericType(typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap52", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(TimeSpan), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap53", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(key, typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap54", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), key, typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap55", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap56", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), key, typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap57", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke2);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap58", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap59", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(key, typeof(CancellationToken), typeof(TimeSpan), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap60", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), key, typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap61", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(TimeSpan), typeof(CancellationToken), key, typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap62", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), key, typeof(TimeSpan), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+            key = gp[0].UnderlyingSystemType;
+
+            am = adapter.DefineMethod("Wrap63", MethodAttributes.Public | MethodAttributes.HideBySig, valueTaskReturnType, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.SetCustomAttribute(aggressiveInlining);
+
+            il = am.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, valueTaskReturnType));
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, invoke3);
+            il.Emit(OpCodes.Ret);
+
+            m = type.DefineMethod("WrapAsync", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+            mp = m.DefineGenericParameters("TK", "TV");
+
+            key = mp[0].UnderlyingSystemType;
+
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.SetParameters(typeof(Func<,,,>).MakeGenericType(typeof(CancellationToken), typeof(TimeSpan), key, typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
+
+            m.SetCustomAttribute(aggressiveInlining);
+
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+#if NETSTANDARD2_0
+            adapter.CreateTypeInfo();
+
+            return type.CreateTypeInfo()!;
+#else
+            adapter.CreateType();
+
+            return type.CreateType()!;
+#endif
         }
     }
 }

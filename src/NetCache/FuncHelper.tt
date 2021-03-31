@@ -4,19 +4,24 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".generated.cs" #>
-<#@ include file="FuncHelper.Class.tt"#>
+<#@ include file="../NetCache/FuncHelper.Class.tt"#>
 using System;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
+    internal partial class FuncHelper
+    {
 <#  var parameters = new Dictionary<string, string>
     {
-        { "TK", "key" },
-        { "TimeSpan", "expiry" },
-        { "CancellationToken", "cancellationToken" },
+        { "key", "1" },
+        { "typeof(TimeSpan)", "2" },
+        { "typeof(CancellationToken)", "3" },
     };
     var parameterTypes = parameters.Keys.ToArray();
     var funcs = Enumerable.Range(1, parameterTypes.Length)
@@ -41,101 +46,113 @@ namespace NetCache
             return order;
         })
         .ToArray(); #>
-    internal static partial class FuncHelper
-    {
-        #region Sync Wrap
-
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, TV> Wrap<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV> func) =>
-            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 0 #>;
-
-<#  } #>
-        #endregion
-
-        #region Async Wrap
-
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV> func) =>
-            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 1 #>;
-
-<#  } #>
-        #endregion
-
-        #region Task Wrap
-
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>Task<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 2 #>;
-
-<#  } #>
-        #endregion
-
-        #region ValueTask Wrap
-
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Func<<#= string.Join(", ", parameterTypes) #>, ValueTask<TV>> WrapAsync<TK, TV>(Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>ValueTask<TV>> func) =>
-            new Adapter<TK, TV>(func).Wrap<#= index + funcs.Length * 3 #>;
-
-<#  } #>
-        #endregion
-
-        private class Adapter<TK, TV>
+        public static Type CreateType(ModuleBuilder module)
         {
-            private object _func;
+            var proxy = module.GetType("NetCache.FuncAdapter@");
+            if (proxy != null) return proxy;
 
-            public Adapter(object func) => _func = func;
+            var type = module.DefineType("NetCache.FuncAdapter@", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Public | TypeAttributes.Sealed, typeof(object));
 
-            #region Sync Wrap
+            var adapter = type.DefineNestedType("Adapter", TypeAttributes.NestedPrivate | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, typeof(object));
 
-<#  for (var index = 0; index < funcs.Length; index++)
+            GenericTypeParameterBuilder[] mp;
+            var gp = adapter.DefineGenericParameters("TK", "TV");
+
+            var func = adapter.DefineField("_func", typeof(object), FieldAttributes.Private);
+
+            MethodBuilder am, m;
+            var ctor = adapter.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, new[] { typeof(object) });
+
+            var il = ctor.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, typeof(object).GetConstructors().First());
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Stfld, func);
+            il.Emit(OpCodes.Ret);
+
+            var aggressiveInlining = new CustomAttributeBuilder(typeof(MethodImplAttribute).GetConstructor(new[] { typeof(MethodImplOptions) }), new object[] { MethodImplOptions.AggressiveInlining });
+            var taskReturnType = typeof(Task<>).MakeGenericType(gp[1].UnderlyingSystemType);
+            var valueTaskReturnType = typeof(ValueTask<>).MakeGenericType(gp[1].UnderlyingSystemType);
+            var syncCtor = typeof(ValueTask<>).GetConstructors().First(c => !c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
+            var asyncCtor = typeof(ValueTask<>).GetConstructors().First(c => c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
+
+            var funcCtor = typeof(Func<,,,>).GetConstructors().First();
+            var invoke0 = typeof(Func<>).GetMethod("Invoke");
+            var invoke1 = typeof(Func<,>).GetMethod("Invoke");
+            var invoke2 = typeof(Func<,,>).GetMethod("Invoke");
+            var invoke3 = typeof(Func<,,,>).GetMethod("Invoke");
+
+            Type key;
+
+<#  for (var j = 0; j < 4; j++)
+    for (var index = 0; index < funcs.Length; index++)
     { #>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TV Wrap<#= index + funcs.Length * 0 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
-                ((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>);
+            key = gp[0].UnderlyingSystemType;
 
-<#  } #>
-            #endregion
+            am = adapter.DefineMethod("Wrap<#= index + funcs.Length * j #>", MethodAttributes.Public | MethodAttributes.HideBySig, <#= j < 1 ? "gp[1].UnderlyingSystemType" : "valueTaskReturnType" #>, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
 
-            #region Async Wrap
+            am.SetCustomAttribute(aggressiveInlining);
 
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap<#= index + funcs.Length * 1 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
-                new ValueTask<TV>(((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>TV>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>));
+            il = am.GetILGenerator();
 
-<#  } #>
-            #endregion
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, func);
+            il.Emit(OpCodes.Castclass, typeof(Func<<#= new String(',', funcs[index].Length) #>>).MakeGenericType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "gp[1].UnderlyingSystemType" : (j < 3 ? "taskReturnType" : "valueTaskReturnType") })) #>));
+<# foreach (var p in funcs[index])
+{ #>
+            il.Emit(OpCodes.Ldarg_<#= parameters[p] #>);
+<# } #>
+            il.Emit(OpCodes.Callvirt, invoke<#= funcs[index].Length #>);
+<# if (j == 1)
+{ #>
+            il.Emit(OpCodes.Newobj, syncCtor);
+<# }
+else if (j == 2)
+{ #>
+            il.Emit(OpCodes.Newobj, asyncCtor);
+<# } #>
+            il.Emit(OpCodes.Ret);
 
-            #region Task Wrap
+            m = type.DefineMethod("Wrap<#= j > 0 ? "Async" : "" #>", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
 
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap<#= index + funcs.Length *  2 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
-                new ValueTask<TV>(((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>Task<TV>>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>));
+            mp = m.DefineGenericParameters("TK", "TV");
 
-<#  } #>
-            #endregion
+            key = mp[0].UnderlyingSystemType;
 
-            #region ValueTask Wrap
+<# if (j < 1)
+{ #>
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+<# }
+else
+{ #>
+            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+<# } #>
+            m.SetParameters(typeof(Func<<#= new String(',', funcs[index].Length) #>>).MakeGenericType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "mp[1].UnderlyingSystemType" : (j < 3 ? "typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)" : "typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)") })) #>));
+            m.DefineParameter(1, ParameterAttributes.None, "func");
 
-<#  for (var index = 0; index < funcs.Length; index++)
-    { #>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ValueTask<TV> Wrap<#= index + funcs.Length * 3 #>(<#= string.Join(", ", parameters.Select(kv => kv.Key + " " + kv.Value)) #>) =>
-                ((Func<<#= string.Join(", ", funcs[index].Length > 0 ? funcs[index].Union(new [] { "" }) : funcs[index]) #>ValueTask<TV>>)_func)(<#= string.Join(", ", funcs[index].Select(p => parameters[p])) #>);
+            m.SetCustomAttribute(aggressiveInlining);
 
-<#  } #>
-            #endregion
+            il = m.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ldftn, am);
+            il.Emit(OpCodes.Newobj, funcCtor);
+
+            il.Emit(OpCodes.Ret);
+
+<# } #>
+#if NETSTANDARD2_0
+            adapter.CreateTypeInfo();
+
+            return type.CreateTypeInfo()!;
+#else
+            adapter.CreateType();
+
+            return type.CreateType()!;
+#endif
         }
     }
 }

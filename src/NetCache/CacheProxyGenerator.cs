@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +19,13 @@ namespace NetCache
 
         private readonly ModuleBuilder _mb = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName { Name = "NetCache.Proxies" }, AssemblyBuilderAccess.Run).DefineDynamicModule("Proxies");
         private readonly ConcurrentDictionary<Type, Type> _proxies = new();
+        private readonly FuncHelper _helper;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public CacheProxyGenerator()
+        {
+            _helper = FuncHelper.CreateHelper(_mb);
+        }
+
         public Type CreateProxyType(Type type)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -36,7 +40,7 @@ namespace NetCache
             return _proxies.GetOrAdd(type, t => CreateProxy(_mb, t));
         }
 
-        public static Type CreateProxy(ModuleBuilder module, Type type)
+        private Type CreateProxy(ModuleBuilder module, Type type)
         {
             if (module == null) throw new ArgumentNullException(nameof(module));
             if (type == null) throw new ArgumentNullException(nameof(type));
@@ -176,7 +180,7 @@ namespace NetCache
             ctor.Emit(OpCodes.Ret);
         }
 
-        private static void BuildGet(CacheMethod method, ILGenerator il, int defaultTtl)
+        private void BuildGet(CacheMethod method, ILGenerator il, int defaultTtl)
         {
             var keyType = method.Method.GetParameters()[0].ParameterType;
 
@@ -199,7 +203,7 @@ namespace NetCache
             }
         }
 
-        private static void BuildFunc(CacheMethod method, ILGenerator il, Type keyType, Type valueType)
+        private void BuildFunc(CacheMethod method, ILGenerator il, Type keyType, Type valueType)
         {
             Type funcType;
             if (method.Method.IsAbstract)
@@ -243,8 +247,8 @@ namespace NetCache
 
             if (arg1 != typeof(object) || arg2 != typeof(TimeSpan) || arg3 != typeof(CancellationToken) || method.AsyncType != null && returnArg != typeof(ValueTask<>))
                 il.Emit(OpCodes.Call, (method.AsyncType == null
-                        ? FuncHelper.GetWrapMethod(arg1, arg2, arg3, returnArg)
-                        : FuncHelper.GetWrapAsyncMethod(arg1, arg2, arg3, returnArg))
+                        ? _helper.GetWrapMethod(arg1, arg2, arg3, returnArg)
+                        : _helper.GetWrapAsyncMethod(arg1, arg2, arg3, returnArg))
                     .MakeGenericMethod(keyType, method.ValueType));
         }
 
@@ -453,6 +457,7 @@ namespace NetCache
             {
                 var trueLabel = il.DefineLabel();
                 var endLabel = il.DefineLabel();
+                var endLabel2 = il.DefineLabel();
 
                 il.Emit(OpCodes.Call, returnType.GetProperty(nameof(ValueTask.IsCompletedSuccessfully))!.GetMethod);
                 il.Emit(OpCodes.Brtrue_S, trueLabel);
@@ -469,12 +474,13 @@ namespace NetCache
                 il.Emit(OpCodes.Initobj, typeof(ValueTask));
                 Ldloc(il, locals);
 
+                il.MarkLabel(endLabel);
                 il.DeclareLocal(typeof(ValueTask));
                 Stloc(il, ++locals);
-                il.Emit(OpCodes.Br_S, endLabel);
-                Ldloc(il, locals);
+                il.Emit(OpCodes.Br_S, endLabel2);
 
-                il.MarkLabel(endLabel);
+                il.MarkLabel(endLabel2);
+                Ldloc(il, locals);
             }
             else
             {

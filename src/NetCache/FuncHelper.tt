@@ -46,22 +46,20 @@ namespace NetCache
             return order;
         })
         .ToArray(); #>
-        public static Type CreateType(ModuleBuilder module)
+        private Type CreateType(ModuleBuilder module)
         {
             var proxy = module.GetType("NetCache.FuncAdapter@");
-            if (proxy != null) return proxy;
+            if (proxy != null) throw new InvalidOperationException("TYpe 'NetCache.FuncAdapter@' has exits.");
 
-            var type = module.DefineType("NetCache.FuncAdapter@", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Public | TypeAttributes.Sealed, typeof(object));
+            var adapter = module.DefineType("NetCache.FuncAdapter@", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed, typeof(object));
 
-            var adapter = type.DefineNestedType("Adapter", TypeAttributes.NestedPrivate | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, typeof(object));
-
-            GenericTypeParameterBuilder[] mp;
             var gp = adapter.DefineGenericParameters("TK", "TV");
 
             var func = adapter.DefineField("_func", typeof(object), FieldAttributes.Private);
 
-            MethodBuilder am, m;
             var ctor = adapter.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, new[] { typeof(object) });
+
+            ctor.DefineParameter(1, ParameterAttributes.None, "func");
 
             var il = ctor.GetILGenerator();
 
@@ -72,26 +70,30 @@ namespace NetCache
             il.Emit(OpCodes.Stfld, func);
             il.Emit(OpCodes.Ret);
 
+            MethodBuilder am;
+            var key = gp[0].UnderlyingSystemType;
+
             var aggressiveInlining = new CustomAttributeBuilder(typeof(MethodImplAttribute).GetConstructor(new[] { typeof(MethodImplOptions) }), new object[] { MethodImplOptions.AggressiveInlining });
+
             var taskReturnType = typeof(Task<>).MakeGenericType(gp[1].UnderlyingSystemType);
             var valueTaskReturnType = typeof(ValueTask<>).MakeGenericType(gp[1].UnderlyingSystemType);
+
             var syncCtor = typeof(ValueTask<>).GetConstructors().First(c => !c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
             var asyncCtor = typeof(ValueTask<>).GetConstructors().First(c => c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
 
-            var funcCtor = typeof(Func<,,,>).GetConstructors().First();
             var invoke0 = typeof(Func<>).GetMethod("Invoke");
             var invoke1 = typeof(Func<,>).GetMethod("Invoke");
             var invoke2 = typeof(Func<,,>).GetMethod("Invoke");
             var invoke3 = typeof(Func<,,,>).GetMethod("Invoke");
 
-            Type key;
-
 <#  for (var j = 0; j < 4; j++)
     for (var index = 0; index < funcs.Length; index++)
     { #>
-            key = gp[0].UnderlyingSystemType;
-
             am = adapter.DefineMethod("Wrap<#= index + funcs.Length * j #>", MethodAttributes.Public | MethodAttributes.HideBySig, <#= j < 1 ? "gp[1].UnderlyingSystemType" : "valueTaskReturnType" #>, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+
+            am.DefineParameter(1, ParameterAttributes.None, "key");
+            am.DefineParameter(2, ParameterAttributes.None, "expiry");
+            am.DefineParameter(3, ParameterAttributes.None, "cancellationToken");
 
             am.SetCustomAttribute(aggressiveInlining);
 
@@ -115,43 +117,34 @@ else if (j == 2)
 <# } #>
             il.Emit(OpCodes.Ret);
 
-            m = type.DefineMethod("Wrap<#= j > 0 ? "Async" : "" #>", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
-
-            mp = m.DefineGenericParameters("TK", "TV");
-
-            key = mp[0].UnderlyingSystemType;
-
-<# if (j < 1)
+<# if (j == 0)
 { #>
-            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), mp[1].UnderlyingSystemType));
+            _wrapMethods[new FuncType
 <# }
 else
 { #>
-            m.SetReturnType(typeof(Func<,,,>).MakeGenericType(key, typeof(TimeSpan), typeof(CancellationToken), typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)));
+            _wrapAsyncMethods[new FuncType
 <# } #>
-            m.SetParameters(typeof(Func<<#= new String(',', funcs[index].Length) #>>).MakeGenericType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "mp[1].UnderlyingSystemType" : (j < 3 ? "typeof(Task<>).MakeGenericType(mp[1].UnderlyingSystemType)" : "typeof(ValueTask<>).MakeGenericType(mp[1].UnderlyingSystemType)") })) #>));
-            m.DefineParameter(1, ParameterAttributes.None, "func");
-
-            m.SetCustomAttribute(aggressiveInlining);
-
-            il = m.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ldftn, am);
-            il.Emit(OpCodes.Newobj, funcCtor);
-
-            il.Emit(OpCodes.Ret);
+            {
+<#  for (var i = 1; i <= funcs[index].Length; i++)
+    { #>
+                Arg<#= i #> = <#= funcs[index][i - 1] == "key" ? "typeof(object)" : funcs[index][i - 1] #>,
+<# } #>
+<# if (j == 2)
+{ #>
+                ReturnArg = typeof(Task<>),
+<# }
+else if (j == 3)
+{ #>
+                ReturnArg = typeof(ValueTask<>),
+<# } #>
+            }] = <#= index + funcs.Length * j #>;
 
 <# } #>
 #if NETSTANDARD2_0
-            adapter.CreateTypeInfo();
-
-            return type.CreateTypeInfo()!;
+            return adapter.CreateTypeInfo()!;
 #else
-            adapter.CreateType();
-
-            return type.CreateType()!;
+            return adapter.CreateType()!;
 #endif
         }
     }

@@ -6,8 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CacheProxyGeneratorIlTest.cs" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
-    <PackageReference Include="Lib.Harmony" Version="2.0.1" Condition="'$(TargetFramework)' != 'netcoreapp2.1'" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" Condition="'$(TargetFramework)' != 'netcoreapp2.1'" />
 
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.*" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" Condition="'$(TargetFramework)' != 'net46'" />
@@ -18,6 +17,11 @@
     <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" Condition="'$(TargetFramework)' == 'net46'" />
     <ProjectReference Include="..\..\src\NetCache\NetCache.csproj" />
     <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" Condition="'$(TargetFramework)' != 'net46'" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

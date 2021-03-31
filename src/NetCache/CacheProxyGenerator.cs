@@ -21,10 +21,7 @@ namespace NetCache
         private readonly ConcurrentDictionary<Type, Type> _proxies = new();
         private readonly FuncHelper _helper;
 
-        public CacheProxyGenerator()
-        {
-            _helper = FuncHelper.CreateHelper(_mb);
-        }
+        public CacheProxyGenerator() => _helper = new FuncHelper(_mb);
 
         public Type CreateProxyType(Type type)
         {
@@ -245,11 +242,14 @@ namespace NetCache
                 if (type == typeof(Task<>) || type == typeof(ValueTask<>)) returnArg = type;
             }
 
-            if (arg1 != typeof(object) || arg2 != typeof(TimeSpan) || arg3 != typeof(CancellationToken) || method.AsyncType != null && returnArg != typeof(ValueTask<>))
-                il.Emit(OpCodes.Call, (method.AsyncType == null
-                        ? _helper.GetWrapMethod(arg1, arg2, arg3, returnArg)
-                        : _helper.GetWrapAsyncMethod(arg1, arg2, arg3, returnArg))
-                    .MakeGenericMethod(keyType, method.ValueType));
+            if (arg1 == typeof(object) && arg2 == typeof(TimeSpan) && arg3 == typeof(CancellationToken)
+                && (method.AsyncType == null || returnArg == typeof(ValueTask<>))) return;
+
+            var fat = _helper.FuncAdapterType.MakeGenericType(keyType, method.ValueType);
+
+            il.Emit(OpCodes.Newobj, fat.GetConstructors()[0]);
+            il.Emit(OpCodes.Ldftn, fat.GetMethod("Wrap" + _helper.GetWrapMethod(method.AsyncType == null, arg1, arg2, arg3, returnArg))!);
+            il.Emit(OpCodes.Newobj, typeof(Func<,,,>).MakeGenericType(keyType, typeof(TimeSpan), typeof(CancellationToken), method.AsyncType == null ? method.ValueType : typeof(ValueTask<>).MakeGenericType(method.ValueType)).GetConstructors()[0]);
         }
 
         private static void BuildSet(CacheMethod method, ILGenerator il, int defaultTtl)

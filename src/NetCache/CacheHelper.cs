@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal class CacheHelper
+    public class CacheHelper
     {
         private readonly IDistributedLockFactory _factory;
         private readonly IKeyFormatter _formatter;

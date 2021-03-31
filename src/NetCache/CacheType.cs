@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NetCache
 {
-    internal class CacheType
+    public class CacheType
     {
         public CacheType(string name, Type type, IReadOnlyList<CacheMethod> methods)
         {

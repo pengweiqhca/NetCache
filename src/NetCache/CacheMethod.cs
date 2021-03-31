@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal class CacheMethod
+    public class CacheMethod
     {
         public CacheMethod(MethodInfo method, CacheOperation operation)
         {

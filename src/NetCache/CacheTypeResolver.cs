@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal static class CacheTypeResolver
+    public static class CacheTypeResolver
     {
         /// <exception cref="AggregateException"></exception>
         public static CacheType Resolve(Type type)

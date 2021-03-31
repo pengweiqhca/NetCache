@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IO;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,16 +22,16 @@ namespace NetCache.Tests.TestHelpers
             _helper = new CacheHelper(CacheName, cpf, factory, formatter, serializer, manager, options, DefaultTtl);
 
         public override long? Get(string key) =>
-            _helper.GetOrSet(key, FuncHelper.Wrap(new Func<string, long?>(base.Get)), TimeSpan.FromSeconds(DefaultTtl), default);
+            _helper.GetOrSet(key, new FuncAdapter<string, long?>(new Func<string, long?>(base.Get)).Wrap1, TimeSpan.FromSeconds(DefaultTtl), default);
 
         public override long? Get(string key, TimeSpan ttl, CancellationToken cancellationToken) =>
             _helper.GetOrSet(key, base.Get, ttl, cancellationToken);
         public override Task<ICacheResult<long>> GetAsync(string key) =>
             _helper.Get2Async<string, long>(key, default).AsTask();
         public override Task<long> GetAsync(string key, Func<long> func) =>
-            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
+            _helper.GetOrSetAsync(key, new FuncAdapter<string, long>(func).Wrap16, TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
         public override Task<long> GetAsync(string key, Func<ValueTask<long>> func) =>
-            _helper.GetOrSetAsync(key, FuncHelper.WrapAsync<string, long>(func), TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
+            _helper.GetOrSetAsync(key, new FuncAdapter<string, long>(func).Wrap48, TimeSpan.FromSeconds(DefaultTtl), default).AsTask();
 
         public override Task<long> GetAsync(string key, TimeSpan ttl, CancellationToken cancellationToken, Func<string, TimeSpan, CancellationToken, ValueTask<long>> func) =>
             _helper.GetOrSetAsync(key, func, ttl, cancellationToken).AsTask();
@@ -112,5 +113,27 @@ namespace NetCache.Tests.TestHelpers
         public override void Set(string key, string p, int? value) => _helper.Set(key, p, TimeSpan.FromSeconds(value.GetValueOrDefault()), default, default);
 
         public override void Set(string key, int ttl, [CacheExpiry] int? value) => _helper.Set(key, ttl, TimeSpan.FromSeconds(value.GetValueOrDefault()), default, default);
+    }
+}
+
+namespace NetCache
+{
+    public class FuncAdapter<TK, TV>
+    {
+        private readonly object _func;
+
+        public FuncAdapter(object func) => _func = func;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TV Wrap1(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
+            ((Func<TK, TV>)_func)(key);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ValueTask<TV> Wrap16(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
+            new(((Func<TV>)_func)());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ValueTask<TV> Wrap48(TK key, TimeSpan expiry, CancellationToken cancellationToken) =>
+            ((Func<ValueTask<TV>>)_func)();
     }
 }

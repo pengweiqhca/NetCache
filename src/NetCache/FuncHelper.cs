@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading.Tasks;
 
 namespace NetCache
 {
     internal partial class FuncHelper
     {
-        private readonly IDictionary<FuncType, MethodInfo> _wrapMethods;
-        private readonly IDictionary<FuncType, MethodInfo> _wrapAsyncMethods;
+        private readonly IDictionary<FuncType, int> _wrapMethods = new Dictionary<FuncType, int>(new FuncTypeComparer());
+        private readonly IDictionary<FuncType, int> _wrapAsyncMethods = new Dictionary<FuncType, int>(new FuncTypeComparer());
+        public Type FuncAdapterType { get; }
 
         private struct FuncType
         {
@@ -50,50 +48,10 @@ namespace NetCache
             }
         }
 
-        private FuncHelper(Type helperType)
-        {
-            _wrapMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
-            _wrapAsyncMethods = new Dictionary<FuncType, MethodInfo>(new FuncTypeComparer());
+        public FuncHelper(ModuleBuilder module) => FuncAdapterType = CreateType(module);
 
-            foreach (var method in helperType.GetMethods()
-                .Where(m => m.Name.StartsWith("Wrap", StringComparison.Ordinal)))
-            {
-                var args = method.GetParameters()[0].ParameterType.GenericTypeArguments;
-                Type? arg1 = null, arg2 = null, arg3 = null, returnArg = null;
-
-                if (args[args.Length - 1].IsGenericType)
-                {
-                    var type = args[args.Length - 1].GetGenericTypeDefinition();
-                    if (type == typeof(Task<>) || type == typeof(ValueTask<>))
-                        returnArg = type;
-                }
-                if (args.Length > 1) arg1 = args[0].IsGenericParameter ? typeof(object) : args[0];
-                if (args.Length > 2) arg2 = args[1].IsGenericParameter ? typeof(object) : args[1];
-                if (args.Length > 3) arg3 = args[2].IsGenericParameter ? typeof(object) : args[2];
-
-                (method.Name == "Wrap" ? _wrapMethods : _wrapAsyncMethods)[new FuncType
-                {
-                    Arg1 = arg1,
-                    Arg2 = arg2,
-                    Arg3 = arg3,
-                    ReturnArg = returnArg
-                }] = method;
-            }
-        }
-
-        public static FuncHelper CreateHelper(ModuleBuilder module) => new(CreateType(module));
-
-        public MethodInfo GetWrapMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
-            _wrapMethods[new FuncType
-            {
-                Arg1 = arg1,
-                Arg2 = arg2,
-                Arg3 = arg3,
-                ReturnArg = returnArg
-            }];
-
-        public MethodInfo GetWrapAsyncMethod(Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
-            _wrapAsyncMethods[new FuncType
+        public int GetWrapMethod(bool sync, Type? arg1, Type? arg2, Type? arg3, Type? returnArg) =>
+            (sync ? _wrapMethods : _wrapAsyncMethods)[new FuncType
             {
                 Arg1 = arg1,
                 Arg2 = arg2,

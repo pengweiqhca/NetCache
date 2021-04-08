@@ -42,23 +42,25 @@ namespace NetCache
             if (module == null) throw new ArgumentNullException(nameof(module));
             if (type == null) throw new ArgumentNullException(nameof(type));
 
-            var tb = module.DefineType($"{type.FullName}@Proxy@{type.Assembly.GetHashCode()}", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic);
+            var proxyType = module.DefineType($"{type.FullName}@Proxy@{type.Assembly.GetHashCode()}", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic);
 
             var cacheType = CacheTypeResolver.Resolve(type);
-            var fb = MakeField(tb, cacheType);
+            var filed = proxyType.DefineField("_helper", typeof(CacheHelper), FieldAttributes.Private | FieldAttributes.InitOnly);
+
+            BuildConstructors(proxyType, cacheType, filed);
 
             foreach (var method in cacheType.Methods)
             {
-                var mb = tb.DefineMethod(method.Method.Name,
+                var mb = proxyType.DefineMethod(method.Method.Name,
                     type.IsInterface
-                        ? MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot
-                        : MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig,
+                        ? MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot
+                        : MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
                     method.Method.ReturnType,
                     method.Method.GetParameters().Select(p => p.ParameterType).ToArray());
                 var il = mb.GetILGenerator();
 
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, fb);
+                il.Emit(OpCodes.Ldfld, filed);
                 il.Emit(OpCodes.Ldarg_1);
 
                 DefineGenericParameters(mb, method.Method);
@@ -80,12 +82,12 @@ namespace NetCache
 
                 il.Emit(OpCodes.Ret);
 
-                if (type.IsInterface) tb.DefineMethodOverride(mb, method.Method);
+                if (type.IsInterface) proxyType.DefineMethodOverride(mb, method.Method);
             }
 #if NETSTANDARD2_0
-            return tb.CreateTypeInfo()!;
+            return proxyType.CreateTypeInfo()!;
 #else
-            return tb.CreateType()!;
+            return proxyType.CreateType()!;
 #endif
         }
 
@@ -124,10 +126,8 @@ namespace NetCache
             }
         }
 
-        private static FieldBuilder MakeField(TypeBuilder tb, CacheType type)
+        private static void BuildConstructors(TypeBuilder tb, CacheType type, FieldInfo filed)
         {
-            var filed = tb.DefineField("_helper", typeof(CacheHelper), FieldAttributes.Private);
-
             IEnumerable<ConstructorInfo> ctors;
             if (type.Type.IsInterface)
             {
@@ -140,14 +140,12 @@ namespace NetCache
                 tb.SetParent(type.Type);
 
                 ctors = type.Type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                        .Where(ctor => ctor.IsFamily || ctor.IsPublic);
+                    .Where(ctor => ctor.IsFamily || ctor.IsPublic);
             }
 
             foreach (var method in ctors)
                 foreach (var ctor in typeof(CacheHelper).GetConstructors().Take(1))
                     BuildConstructor(tb, type, filed, method, ctor);
-
-            return filed;
         }
 
         private static void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo baseCtor, ConstructorInfo helperCtor)
@@ -155,7 +153,7 @@ namespace NetCache
             var p1 = baseCtor.GetParameters();
             var p2 = helperCtor.GetParameters();
             var parameterTypes = p1.Union(p2.Skip(1)).Take(p1.Length + p2.Length - 2).Select(p => p.ParameterType).ToArray();
-            var ctor = tb.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, parameterTypes)
+            var ctor = tb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, parameterTypes)
                 .GetILGenerator();
 
             //base.ctor
@@ -170,7 +168,7 @@ namespace NetCache
             ctor.Emit(OpCodes.Ldstr, type.Name);
             for (; index < p1.Length + p2.Length - 1; index++) Ldarg(ctor, index);
 
-            ctor.Emit(OpCodes.Ldc_I4_S, type.DefaultTtl);
+            Ldc(ctor, type.DefaultTtl);
 
             ctor.Emit(OpCodes.Newobj, helperCtor);
             ctor.Emit(OpCodes.Stfld, field);
@@ -260,7 +258,7 @@ namespace NetCache
             if (LdTtl(method, il, locals, defaultTtl)) locals++;
 
             if (method.When > 0) Ldarg(il, method.When + 1);
-            else il.Emit(OpCodes.Ldc_I4_0);
+            else Ldc(il, 0);
 
             if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
 
@@ -326,6 +324,40 @@ namespace NetCache
             else
                 il.Emit(OpCodes.Ldloc, index);
         }
+        private static void Ldloca(ILGenerator il, int index)
+        {
+            if (index <= 255)
+                il.Emit(OpCodes.Ldloca_S, (byte)index);
+            else
+                il.Emit(OpCodes.Ldloca, index);
+        }
+        private static void Ldc(ILGenerator il, int index)
+        {
+            if (index == -1)
+                il.Emit(OpCodes.Ldc_I4_M1);
+            else if (index == 0)
+                il.Emit(OpCodes.Ldc_I4_0);
+            else if (index == 1)
+                il.Emit(OpCodes.Ldc_I4_1);
+            else if (index == 2)
+                il.Emit(OpCodes.Ldc_I4_2);
+            else if (index == 3)
+                il.Emit(OpCodes.Ldc_I4_3);
+            else if (index == 4)
+                il.Emit(OpCodes.Ldc_I4_4);
+            else if (index == 5)
+                il.Emit(OpCodes.Ldc_I4_5);
+            else if (index == 6)
+                il.Emit(OpCodes.Ldc_I4_6);
+            else if (index == 7)
+                il.Emit(OpCodes.Ldc_I4_7);
+            else if (index == 8)
+                il.Emit(OpCodes.Ldc_I4_8);
+            else if (index is <= sbyte.MaxValue and >= sbyte.MinValue)
+                il.Emit(OpCodes.Ldc_I4_S, (sbyte)index);
+            else
+                il.Emit(OpCodes.Ldc_I4, index);
+        }
         private static void Stloc(ILGenerator il, int index)
         {
             if (index == 0)
@@ -385,7 +417,7 @@ namespace NetCache
 
                     il.MarkLabel(falseLabel);
                     il.DeclareLocal(typeof(TimeSpan));
-                    il.Emit(OpCodes.Ldloca_S, locals);
+                    Ldloca(il, locals);
                     il.Emit(OpCodes.Initobj, typeof(TimeSpan));
                     Ldloc(il, locals);
                     il.MarkLabel(endLabel);
@@ -429,7 +461,7 @@ namespace NetCache
             {
                 il.DeclareLocal(typeof(T));
 
-                il.Emit(OpCodes.Ldloca_S, locals);
+                Ldloca(il, locals);
 
                 il.Emit(OpCodes.Initobj, typeof(T));
 
@@ -451,7 +483,7 @@ namespace NetCache
 
             Stloc(il, locals);
 
-            il.Emit(OpCodes.Ldloca_S, locals);
+            Ldloca(il, locals);
 
             if (method.Method.ReturnType == typeof(ValueTask))
             {
@@ -462,7 +494,7 @@ namespace NetCache
                 il.Emit(OpCodes.Call, returnType.GetProperty(nameof(ValueTask.IsCompletedSuccessfully))!.GetMethod);
                 il.Emit(OpCodes.Brtrue_S, trueLabel);
 
-                il.Emit(OpCodes.Ldloca_S, locals);
+                Ldloca(il, locals);
                 il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
                 il.Emit(OpCodes.Newobj, typeof(ValueTask).GetConstructor(new[] { typeof(Task) })!);
 
@@ -470,7 +502,7 @@ namespace NetCache
 
                 il.MarkLabel(trueLabel);
                 il.DeclareLocal(typeof(ValueTask));
-                il.Emit(OpCodes.Ldloca_S, ++locals);
+                Ldloca(il, ++locals);
                 il.Emit(OpCodes.Initobj, typeof(ValueTask));
                 Ldloc(il, locals);
 

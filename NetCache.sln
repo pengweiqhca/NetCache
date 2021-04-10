@@ -54,12 +54,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.CSRedis", "src\Net
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.Benchmark", "benchmark\NetCache.Benchmark\NetCache.Benchmark.csproj", "{0448E908-1210-4382-8B03-C100B65DE2F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCache.SystemRuntimeCaching", "src\NetCache.SystemRuntimeCaching\NetCache.SystemRuntimeCaching.csproj", "{E55049B1-E1C5-4692-A55B-9DD465538698}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.SystemRuntimeCaching", "src\NetCache.SystemRuntimeCaching\NetCache.SystemRuntimeCaching.csproj", "{E55049B1-E1C5-4692-A55B-9DD465538698}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmark", "benchmark", "{EF7DF78B-A614-4288-AF38-56B7F687535E}"
 	ProjectSection(SolutionItems) = preProject
 		benchmark\Directory.Build.props = benchmark\Directory.Build.props
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.BuildTask", "src\NetCache.BuildTask\NetCache.BuildTask.csproj", "{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.BuildTask.Tests", "test\NetCache.BuildTask.Tests\NetCache.BuildTask.Tests.csproj", "{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.IL.Tests", "test\NetCache.IL.Tests\NetCache.IL.Tests.csproj", "{54CABC68-FE68-4B69-A5FE-46736D6CF166}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -131,6 +137,18 @@ Global
 		{E55049B1-E1C5-4692-A55B-9DD465538698}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E55049B1-E1C5-4692-A55B-9DD465538698}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E55049B1-E1C5-4692-A55B-9DD465538698}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -152,6 +170,9 @@ Global
 		{B92D712F-08A7-4F02-8BA1-110D20B6D9C7} = {77EC9A60-184C-49BC-9ABA-5A642C4ABAD0}
 		{0448E908-1210-4382-8B03-C100B65DE2F1} = {EF7DF78B-A614-4288-AF38-56B7F687535E}
 		{E55049B1-E1C5-4692-A55B-9DD465538698} = {77EC9A60-184C-49BC-9ABA-5A642C4ABAD0}
+		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC} = {77EC9A60-184C-49BC-9ABA-5A642C4ABAD0}
+		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0} = {DCB1A2D3-D037-4C22-9B41-038CA46F035C}
+		{54CABC68-FE68-4B69-A5FE-46736D6CF166} = {DCB1A2D3-D037-4C22-9B41-038CA46F035C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B8D6CA4C-0173-4E1F-A7F2-5EBE9EB6108A}

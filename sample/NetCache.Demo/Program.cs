@@ -4,23 +4,27 @@ using Microsoft.Extensions.Hosting;
 #endif
 using NetCache.Tests.TestHelpers;
 using System;
+using System.Threading.Tasks;
 
 namespace NetCache.Demo
 {
     public static class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
 #if NET46
             var services = new ServiceCollection();
 #else
-            using var host = Host.CreateDefaultBuilder(args)
+            var host = Host.CreateDefaultBuilder(args)
                 .ConfigureServices(services =>
                 {
 #endif
                     services.AddMemoryCache()
                         .AddNetCache()
-                        .AddCacheType<Int64Cache>(_ => new object[] {_})
+                        .AddCacheType<Int64Cache>(_ => new object[] { _ })
+#if NETCOREAPP3_1_OR_GREATER
+                        .AddCacheType<IDefaultImplementation>()
+#endif
                         .UseMemoryCache()
 #if NET46
                 .UseNewtonsoftJsonSerializer();
@@ -33,21 +37,47 @@ namespace NetCache.Demo
 
             var root = host.Services;
 #endif
-            using var scope = root.CreateScope();
+            var scope = root.CreateScope();
+            try
+            {
+                var obj = scope.ServiceProvider.GetRequiredService<Int64Cache>();
 
-            var obj = scope.ServiceProvider.GetRequiredService<Int64Cache>();
+                var key = Guid.NewGuid().ToString();
+                var value = new Random().Next();
 
-            var key = Guid.NewGuid().ToString();
-            var value = new Random().Next();
+                Console.WriteLine(obj.Get(key));
 
-            Console.WriteLine(obj.Get(key));
+                obj.Delete(key);
+                await obj.RemoveAsync(key).ConfigureAwait(false);
 
-            obj.Delete(key);
-            obj.RemoveAsync(key);
+                obj.Set(key, value, 3);
 
-            obj.Set(key, value, 3);
+                Console.WriteLine(obj.Get(key));
+#if NETCOREAPP3_1_OR_GREATER
+                Console.WriteLine(scope.ServiceProvider.GetRequiredService<IDefaultImplementation>().Get("abc"));
+#endif
+            }
+            finally
+            {
+#if NET46
+                scope.Dispose();
+                (root as IDisposable)?.Dispose();
+#else
+                if (scope is IAsyncDisposable ad)
+                    await ad.DisposeAsync().ConfigureAwait(false);
+                else scope.Dispose();
 
-            Console.WriteLine(obj.Get(key));
+                if (host is IAsyncDisposable ad2)
+                    await ad2.DisposeAsync().ConfigureAwait(false);
+                else host.Dispose();
+#endif
+            }
         }
+#if NETCOREAPP3_1_OR_GREATER
+        public interface IDefaultImplementation
+        {
+            long Get(string key) => DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        }
+#endif
     }
 }

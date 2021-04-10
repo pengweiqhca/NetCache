@@ -1,15 +1,27 @@
-﻿using System;
+﻿using Mono.Cecil;
+using Mono.Cecil.Rocks;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
-    internal static class CacheTypeResolver
+    public static class CacheTypeResolver
     {
+        public static readonly TypeDefinition Void;
+        public static readonly TypeDefinition Boolean;
+
+        static CacheTypeResolver()
+        {
+            var module = AssemblyDefinition.ReadAssembly(typeof(void).Assembly.Location).MainModule;
+
+            Void = module.GetType(typeof(void).FullName);
+            Boolean = module.GetType(typeof(bool).FullName);
+        }
+
         /// <exception cref="AggregateException"></exception>
-        public static CacheType Resolve(Type type)
+        public static CacheType Resolve(TypeDefinition type)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
 
@@ -19,7 +31,7 @@ namespace NetCache
             foreach (var method in type.GetMethods())
             {
                 var canBeOverride = method.IsVirtual && !method.IsFinal;
-                if (!canBeOverride || method.DeclaringType == typeof(object)) continue;
+                if (!canBeOverride || method.DeclaringType.FullName == typeof(object).FullName) continue;
 
                 var operation = GetOperation(method);
 
@@ -58,10 +70,10 @@ namespace NetCache
             return new CacheType(GetCacheName(type, out var defaultTtl), type, methods) { DefaultTtl = defaultTtl };
         }
 
-        private static CacheOperation GetOperation(MemberInfo method)
+        private static CacheOperation GetOperation(IMemberDefinition method)
         {
-            var attr = method.GetCustomAttribute<CacheMethodAttribute>(true);
-            if (attr != null) return attr.Operation;
+            var attr = method.GetCustomAttribute("NetCache.CacheMethodAttribute, NetCache.Core");
+            if (attr != null) return (CacheOperation)attr.ConstructorArguments[0].Value;
 
             if (method.Name.StartsWith(nameof(CacheOperation.Set), StringComparison.OrdinalIgnoreCase)) return CacheOperation.Set;
 
@@ -73,21 +85,21 @@ namespace NetCache
                 : CacheOperation.Ignore;
         }
 
-        public static CacheMethod? ResolveGet(MethodInfo method)
+        public static CacheMethod? ResolveGet(MethodReference method)
         {
             var valueType = GetSyncType(method.ReturnType, out var a);
-            if (valueType == typeof(void)) return null;
+            if (valueType.IsType(typeof(void))) return null;
 
-            var parameters = method.GetParameters();
-            if (parameters.Length < 1) return null;
+            var parameters = method.Parameters;
+            if (parameters.Count < 1) return null;
 
-            if (parameters.Length < 2) return new CacheMethod(method, CacheOperation.Get);
+            if (parameters.Count < 2) return new CacheMethod(method, CacheOperation.Get);
 
             int ttl = 0, value = 0, token = 0;
 
-            for (var index = 1; index < parameters.Length; index++)
+            for (var index = 1; index < parameters.Count; index++)
             {
-                if (parameters[index].ParameterType == typeof(CancellationToken))
+                if (parameters[index].ParameterType.IsType<CancellationToken>())
                 {
                     if (token > 0) return null;
 
@@ -105,18 +117,18 @@ namespace NetCache
                     continue;
                 }
 
-                if (!parameters[index].ParameterType.IsGenericType) return null;
+                if (!parameters[index].ParameterType.IsGenericInstance) return null;
 
-                var args = parameters[index].ParameterType.GetGenericArguments();
-                if (valueType != GetSyncType(args[args.Length - 1], out var b) || !a && b ||
-                    args.Length == 1 && typeof(Func<>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                    args.Length == 2 && typeof(Func<,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                    args.Length == 3 && typeof(Func<,,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                    args.Length == 4 && typeof(Func<,,,>) != parameters[index].ParameterType.GetGenericTypeDefinition() ||
-                    args.Length > 4 || value > 0 || !method.IsAbstract) return null;
+                var args = ((GenericInstanceType)parameters[index].ParameterType).GenericArguments;
+                if (valueType != GetSyncType(args[args.Count - 1], out var b) || !a && b ||
+                    args.Count == 1 && !parameters[index].ParameterType.GetElementType().IsType(typeof(Func<>)) ||
+                    args.Count == 2 && !parameters[index].ParameterType.GetElementType().IsType(typeof(Func<,>)) ||
+                    args.Count == 3 && !parameters[index].ParameterType.GetElementType().IsType(typeof(Func<,,>)) ||
+                    args.Count == 4 && !parameters[index].ParameterType.GetElementType().IsType(typeof(Func<,,,>)) ||
+                    args.Count > 4 || value > 0 || !method.Resolve().IsAbstract) return null;
 
                 var type = 0;
-                for (var i = 0; i < args.Length - 2; i++)
+                for (var i = 0; i < args.Count - 2; i++)
                 {
                     if (args[i] == parameters[0].ParameterType)
                     {
@@ -127,7 +139,7 @@ namespace NetCache
                         continue;
                     }
 
-                    if (args[i] == typeof(TimeSpan))
+                    if (args[i].IsType<TimeSpan>())
                     {
                         if ((type & 2) == 2) return null;
 
@@ -136,7 +148,7 @@ namespace NetCache
                         continue;
                     }
 
-                    if (args[i] == typeof(CancellationToken))
+                    if (args[i].IsType<CancellationToken>())
                     {
                         if ((type & 4) == 4) return null;
 
@@ -159,27 +171,27 @@ namespace NetCache
             };
         }
 
-        public static CacheMethod? ResolveSet(MethodInfo method)
+        public static CacheMethod? ResolveSet(MethodReference method)
         {
             var returnType = GetSyncType(method.ReturnType, out _);
-            if (returnType != typeof(void) && returnType != typeof(bool)) return null;
+            if (!returnType.IsType(typeof(void)) && !returnType.IsType<bool>()) return null;
 
-            var parameters = method.GetParameters();
-            if (parameters.Length < 2) return null;
+            var parameters = method.Parameters;
+            if (parameters.Count < 2) return null;
 
-            if (parameters.Length == 2) return new CacheMethod(method, CacheOperation.Set)
+            if (parameters.Count == 2) return new CacheMethod(method, CacheOperation.Set)
             {
                 Value = 1,
-                RawType = typeof(bool)
+                RawType = Boolean
             };
 
             int ttl = 0, value = 0, when = 0, token = 0, ttlType = 0; //0: auto, 1: implicit, 2: explicit
 
-            for (var index = 1; index < parameters.Length; index++)
+            for (var index = 1; index < parameters.Count; index++)
             {
-                var attr = parameters[index].GetCustomAttribute<CacheExpiryAttribute>();
+                var attr = parameters[index].GetCustomAttribute("NetCache.CacheExpiryAttribute, NetCache.Core");
 
-                if (parameters[index].ParameterType == typeof(CancellationToken))
+                if (parameters[index].ParameterType.IsType<CancellationToken>())
                 {
                     if (token > 0 || attr != null) return null;
 
@@ -188,7 +200,7 @@ namespace NetCache
                     continue;
                 }
 
-                if (parameters[index].ParameterType == typeof(When))
+                if (parameters[index].ParameterType.IsType("NetCache.When, NetCache.Core"))
                 {
                     if (when > 0 || attr != null) return null;
 
@@ -250,73 +262,77 @@ namespace NetCache
                 Ttl = ttl,
                 When = when,
                 CancellationToken = token,
-                RawType = typeof(bool),
+                RawType = Boolean,
                 Value = value
             };
 
             return null;
         }
 
-        private static bool IsTtlType(Type type)
+        private static bool IsTtlType(TypeReference type)
         {
-            if (type.IsClass) return false;
+            if (!type.IsValueType) return false;
 
-            type = Nullable.GetUnderlyingType(type) ?? type;
+            type = type.GetUnderlyingType() ?? type;
 
-            return type == typeof(byte) ||
-                   type == typeof(sbyte) ||
-                   type == typeof(short) ||
-                   type == typeof(ushort) ||
-                   type == typeof(int) ||
-                   type == typeof(uint) ||
-                   type == typeof(long) ||
-                   type == typeof(ulong) ||
-                   type == typeof(float) ||
-                   type == typeof(double) ||
-                   type == typeof(decimal) ||
-                   type == typeof(TimeSpan) ||
-                   type == typeof(DateTime) ||
-                   type == typeof(DateTimeOffset);
+            return type.IsType<byte>() ||
+                   type.IsType<sbyte>() ||
+                   type.IsType<short>() ||
+                   type.IsType<ushort>() ||
+                   type.IsType<int>() ||
+                   type.IsType<uint>() ||
+                   type.IsType<long>() ||
+                   type.IsType<ulong>() ||
+                   type.IsType<float>() ||
+                   type.IsType<double>() ||
+                   type.IsType<decimal>() ||
+                   type.IsType<TimeSpan>() ||
+                   type.IsType<DateTime>() ||
+                   type.IsType<DateTimeOffset>();
         }
 
-        public static CacheMethod? ResolveRemove(MethodInfo method)
+        public static CacheMethod? ResolveRemove(MethodReference method)
         {
             var returnType = GetSyncType(method.ReturnType, out _);
-            if (returnType != typeof(void) && returnType != typeof(bool)) return null;
+            if (!returnType.IsType(typeof(void)) && !returnType.IsType<bool>()) return null;
 
-            return method.GetParameters().Length == 1 ? new CacheMethod(method, CacheOperation.Remove) { RawType = typeof(bool) } : null;
+            return method.Parameters.Count == 1 ? new CacheMethod(method, CacheOperation.Remove) { RawType = Boolean } : null;
         }
 
-        internal static Exception ParameterException(Type type, MethodInfo method) => new NotSupportedException($"{type.FullName}.{method.Name}参数异常");
+        internal static Exception ParameterException(TypeReference type, MethodReference method) => new NotSupportedException($"{type.FullName}.{method.Name}参数异常");
 
-        public static string GetCacheName(Type type, out int defaultTtl)
+        public static string GetCacheName(TypeDefinition type, out int defaultTtl)
         {
             defaultTtl = 0;
 
-            var attr = type.GetCustomAttribute<CacheAttribute>(true);
+            var attr = type.GetCustomAttribute("NetCache.CacheAttribute, NetCache.Core");
             if (attr == null) return type.FullName ?? type.Name;
 
-            defaultTtl = attr.TtlSecond;
+            defaultTtl = attr.Properties.FirstValue("TtlSecond", 0);
 
-            return attr.CacheName ?? type.FullName ?? type.Name;
+            return attr.ConstructorArguments.FirstValue(0, type.FullName ?? type.Name);
         }
 
-        private static Type GetSyncType(Type type, out bool isAsync)
+        private static TypeReference GetSyncType(TypeReference type, out bool isAsync)
         {
-            if (type == typeof(Task) || type == typeof(ValueTask))
+            if (type.IsType<Task>() || type.IsType<ValueTask>())
             {
                 isAsync = true;
 
-                return typeof(void);
+                return Void;
             }
 
-            if (type.IsGenericType &&
-                (typeof(Task).IsAssignableFrom(type) ||
-                 type.GetGenericTypeDefinition() == typeof(ValueTask<>)))
+            if (type.IsGenericInstance)
             {
-                isAsync = true;
+                var genericInstance = (GenericInstanceType)type;
 
-                return type.GetGenericArguments()[0];
+                if (genericInstance.GetElementType().IsType(typeof(Task<>)) ||
+                    genericInstance.GetElementType().IsType(typeof(ValueTask<>)))
+                {
+                    isAsync = true;
+
+                    return genericInstance.GenericArguments[0];
+                }
             }
 
             isAsync = false;

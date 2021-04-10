@@ -1,14 +1,51 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetCache
 {
+#if BuildTask
+    using Mono.Cecil;
+    using Mono.Cecil.Cil;
+    using Mono.Cecil.Rocks;
+    using ConstructorInfo = Mono.Cecil.MethodReference;
+    using FieldInfo = Mono.Cecil.FieldReference;
+    using ILGenerator = Mono.Cecil.Cil.ILProcessor;
+    using MethodBuilder = Mono.Cecil.MethodDefinition;
+    using MethodInfo = Mono.Cecil.MethodReference;
+    using ParameterBuilder = Mono.Cecil.ParameterDefinition;
+    using ParameterInfo = Mono.Cecil.ParameterDefinition;
+    using Type = Mono.Cecil.TypeReference;
+    using TypeBuilder = Mono.Cecil.TypeDefinition;
+
+    internal class CacheProxyType : CacheMetadata
+    {
+        private readonly IReadOnlyDictionary<string, MethodInfo> _cacheHelperMethods;
+
+        private readonly CacheInterface _interface;
+
+        private readonly FuncHelper _helper;
+
+        public CacheProxyType(CacheAssembly assembly, CacheInterface @interface, FuncHelper helper, IReadOnlyDictionary<string, MethodInfo> cacheHelperMethods)
+            : base(assembly)
+        {
+            _interface = @interface;
+            _helper = helper;
+            _cacheHelperMethods = cacheHelperMethods;
+        }
+
+        /// <see href="https://cecilifier.me/" />
+        public TypeBuilder Build()
+        {
+            var type = _interface.Type;
+            var proxyType = _interface.MakeProxyType();
+#else
+    using System.Collections.Concurrent;
+    using System.Reflection;
+    using System.Reflection.Emit;
+
     public class CacheProxyGenerator : ICacheProxyGenerator
     {
         private static readonly IReadOnlyDictionary<string, MethodInfo> CacheHelperMethods =
@@ -43,7 +80,7 @@ namespace NetCache
             if (type == null) throw new ArgumentNullException(nameof(type));
 
             var proxyType = module.DefineType($"{type.FullName}@Proxy@{type.Assembly.GetHashCode()}", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic);
-
+#endif
             var cacheType = CacheTypeResolver.Resolve(type);
             var filed = proxyType.DefineField("_helper", typeof(CacheHelper), FieldAttributes.Private | FieldAttributes.InitOnly);
 
@@ -57,6 +94,7 @@ namespace NetCache
                         : MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
                     method.Method.ReturnType,
                     method.Method.GetParameters().Select(p => p.ParameterType).ToArray());
+
                 var il = mb.GetILGenerator();
 
                 il.Emit(OpCodes.Ldarg_0);
@@ -81,10 +119,14 @@ namespace NetCache
                 }
 
                 il.Emit(OpCodes.Ret);
-
+#if !BuildTask
                 if (type.IsInterface) proxyType.DefineMethodOverride(mb, method.Method);
+#endif
+                BuildParameters(mb.DefineParameter, method.Method.GetParameters());
             }
-#if NETSTANDARD2_0
+#if BuildTask
+            return proxyType;
+#elif NETSTANDARD2_0
             return proxyType.CreateTypeInfo()!;
 #else
             return proxyType.CreateType()!;
@@ -93,6 +135,11 @@ namespace NetCache
 
         private static void DefineGenericParameters(MethodBuilder mb, MethodInfo method)
         {
+#if BuildTask
+            if (!method.IsGenericInstance) return;
+
+            foreach (var gp in method.GenericParameters) mb.GenericParameters.Add(gp);
+#else
             if (!method.IsGenericMethod) return;
 
             var gas = method.GetGenericArguments();
@@ -109,7 +156,7 @@ namespace NetCache
                 foreach (var attr in gas[index].GetCustomAttributesData())
                 {
                     var cab = attr.NamedArguments == null ?
-                        new CustomAttributeBuilder(
+                    new CustomAttributeBuilder(
                             attr.Constructor,
                             attr.ConstructorArguments.Select(a => a.Value).ToArray())
                         : new CustomAttributeBuilder(
@@ -124,10 +171,20 @@ namespace NetCache
                     gtpb[index].SetCustomAttribute(cab);
                 }
             }
+#endif
         }
 
-        private static void BuildConstructors(TypeBuilder tb, CacheType type, FieldInfo filed)
+        private void BuildConstructors(TypeBuilder tb, CacheType type, FieldInfo filed)
         {
+#if BuildTask
+            var ctors = _interface.Type.IsInterface
+                ? TypeSystem.Object.Resolve().GetConstructors()
+                : _interface.Type.GetConstructors().Where(ctor => ctor.IsFamily || ctor.IsPublic);
+
+            foreach (var method in ctors)
+                foreach (var ctor in ImportType<CacheHelper>().Resolve().GetConstructors().Take(1))
+                    BuildConstructor(tb, type, filed, Module.ImportReference(method), Module.ImportReference(ctor));
+#else
             IEnumerable<ConstructorInfo> ctors;
             if (type.Type.IsInterface)
             {
@@ -146,40 +203,62 @@ namespace NetCache
             foreach (var method in ctors)
                 foreach (var ctor in typeof(CacheHelper).GetConstructors().Take(1))
                     BuildConstructor(tb, type, filed, method, ctor);
+#endif
         }
 
-        private static void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo baseCtor, ConstructorInfo helperCtor)
+        private void BuildConstructor(TypeBuilder tb, CacheType type, FieldInfo field, ConstructorInfo baseCtor, ConstructorInfo helperCtor)
         {
             var p1 = baseCtor.GetParameters();
             var p2 = helperCtor.GetParameters();
             var parameterTypes = p1.Union(p2.Skip(1)).Take(p1.Length + p2.Length - 2).Select(p => p.ParameterType).ToArray();
-            var ctor = tb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, parameterTypes)
-                .GetILGenerator();
+#if BuildTask
+            var ctor = tb.DefineMethod(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, TypeSystem.Void, parameterTypes);
+
+            ctor.HasThis = true;
+#else
+            var ctor = tb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.HasThis, parameterTypes);
+#endif
+            BuildParameters(ctor.DefineParameter, p1.Union(p2.Skip(1)).Take(p1.Length + p2.Length - 2));
+
+            var il = ctor.GetILGenerator();
 
             //base.ctor
-            ctor.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_0);
             var index = 1;
-            for (; index <= p1.Length; index++) Ldarg(ctor, index);
+            for (; index <= p1.Length; index++) Ldarg(il, index);
 
-            ctor.Emit(OpCodes.Call, baseCtor);
+            il.Emit(OpCodes.Call, baseCtor);
 
             //new CacheHelper
-            ctor.Emit(OpCodes.Ldarg_0);
-            ctor.Emit(OpCodes.Ldstr, type.Name);
-            for (; index < p1.Length + p2.Length - 1; index++) Ldarg(ctor, index);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldstr, type.Name);
+            for (; index < p1.Length + p2.Length - 1; index++) Ldarg(il, index);
 
-            Ldc(ctor, type.DefaultTtl);
+            Ldc(il, type.DefaultTtl);
 
-            ctor.Emit(OpCodes.Newobj, helperCtor);
-            ctor.Emit(OpCodes.Stfld, field);
-            ctor.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Newobj, helperCtor);
+            il.Emit(OpCodes.Stfld, field);
+            il.Emit(OpCodes.Ret);
+        }
+
+        private static void BuildParameters(Func<int, ParameterAttributes, string, ParameterBuilder> defineParameter, IEnumerable<ParameterInfo> parameters)
+        {
+            var index = 1;
+            foreach (var p in parameters)
+            {
+                defineParameter(index++, p.Attributes, p.Name);
+                //TODO AttributeData;
+            }
         }
 
         private void BuildGet(CacheMethod method, ILGenerator il, int defaultTtl)
         {
             var keyType = method.Method.GetParameters()[0].ParameterType;
-
+#if BuildTask
+            if (method.Method.Resolve().IsAbstract && method.Value < 1)
+#else
             if (method.Method.IsAbstract && method.Value < 1)
+#endif
             {
                 var locals = 0;
                 if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
@@ -200,12 +279,20 @@ namespace NetCache
 
         private void BuildFunc(CacheMethod method, ILGenerator il, Type keyType, Type valueType)
         {
+#if BuildTask
+            GenericInstanceType funcType;
+            if (method.Method.Resolve().IsAbstract)
+#else
             Type funcType;
             if (method.Method.IsAbstract)
+#endif
             {
                 Ldarg(il, method.Value + 1);
-
+#if BuildTask
+                funcType = (GenericInstanceType)method.Method.GetParameters()[method.Value].ParameterType;
+#else
                 funcType = method.Method.GetParameters()[method.Value].ParameterType;
+#endif
             }
             else
             {
@@ -215,19 +302,55 @@ namespace NetCache
                 var result = method.Method.GetParameters().Select(p => p.ParameterType).Union(new[] { valueType }).ToArray();
                 funcType = result.Length switch
                 {
+#if BuildTask
+                    1 => new GenericInstanceType(ImportType(typeof(Func<>))),
+                    2 => new GenericInstanceType(ImportType(typeof(Func<,>))),
+                    3 => new GenericInstanceType(ImportType(typeof(Func<,,>))),
+                    4 => new GenericInstanceType(ImportType(typeof(Func<,,,>))),
+#else
                     1 => typeof(Func<>).MakeGenericType(result),
                     2 => typeof(Func<,>).MakeGenericType(result),
                     3 => typeof(Func<,,>).MakeGenericType(result),
                     4 => typeof(Func<,,,>).MakeGenericType(result),
+#endif
                     _ => throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method)
                 };
+#if BuildTask
+                foreach (var p in result) funcType.GenericArguments.Add(p);
 
+                il.Emit(OpCodes.Newobj, Module.ImportReference(funcType.Resolve().GetConstructors().First()).CopyTo(funcType));
+#else
                 il.Emit(OpCodes.Newobj, funcType.GetConstructors()[0]);
+#endif
             }
 
             var args = funcType.GetGenericArguments();
 
             Type? arg1 = null, arg2 = null, arg3 = null, returnArg = null;
+#if BuildTask
+            if (args.Count > 1) arg1 = args[0] == keyType ? TypeSystem.Object : args[0];
+            if (args.Count > 2) arg2 = args[1] == keyType ? TypeSystem.Object : args[1];
+            if (args.Count > 3) arg3 = args[2] == keyType ? TypeSystem.Object : args[2];
+            if (args.Count > 4) throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method);
+
+            if (args[args.Count - 1].IsGenericInstance)
+            {
+                var type = args[args.Count - 1].GetElementType();
+
+                if (type.IsType(typeof(Task<>)) || type.IsType(typeof(ValueTask<>))) returnArg = type;
+            }
+
+            if (arg1 != null && arg1.IsType<object>() &&
+                arg2 != null && arg2.IsType<TimeSpan>() &&
+                arg3 != null && arg3.IsType<CancellationToken>() &&
+                (method.AsyncType == null || returnArg != null && returnArg.IsType(typeof(ValueTask<>)))) return;
+
+            var fat = _helper.FuncAdapterType.MakeGenericInstanceType(keyType, method.ValueType);
+
+            il.Emit(OpCodes.Newobj, new MethodReference(".ctor", TypeSystem.Void, fat) { Parameters = { new ParameterDefinition(TypeSystem.Object) }, HasThis = true });
+            il.Emit(OpCodes.Ldftn, Module.ImportReference(_helper.GetWrapMethod(method.AsyncType == null, arg1, arg2, arg3, returnArg)).CopyTo(fat));
+            il.Emit(OpCodes.Newobj, Module.ImportReference(typeof(Func<,,,>).GetConstructors()[0]).CopyTo(ImportType(typeof(Func<,,,>)).MakeGenericInstanceType(keyType.GetElementType(), ImportType<TimeSpan>(), ImportType<CancellationToken>(), method.AsyncType == null ? method.ValueType : ImportType(typeof(ValueTask<>)).MakeGenericInstanceType(method.ValueType.GetElementType()))));
+#else
             if (args.Length > 1) arg1 = args[0] == keyType ? typeof(object) : args[0];
             if (args.Length > 2) arg2 = args[1] == keyType ? typeof(object) : args[1];
             if (args.Length > 3) arg3 = args[2] == keyType ? typeof(object) : args[2];
@@ -246,11 +369,12 @@ namespace NetCache
             var fat = _helper.FuncAdapterType.MakeGenericType(keyType, method.ValueType);
 
             il.Emit(OpCodes.Newobj, fat.GetConstructors()[0]);
-            il.Emit(OpCodes.Ldftn, fat.GetMethod("Wrap" + _helper.GetWrapMethod(method.AsyncType == null, arg1, arg2, arg3, returnArg))!);
+            il.Emit(OpCodes.Ldftn, fat.GetMethod(_helper.GetWrapMethod(method.AsyncType == null, arg1, arg2, arg3, returnArg).Name)!);
             il.Emit(OpCodes.Newobj, typeof(Func<,,,>).MakeGenericType(keyType, typeof(TimeSpan), typeof(CancellationToken), method.AsyncType == null ? method.ValueType : typeof(ValueTask<>).MakeGenericType(method.ValueType)).GetConstructors()[0]);
+#endif
         }
 
-        private static void BuildSet(CacheMethod method, ILGenerator il, int defaultTtl)
+        private void BuildSet(CacheMethod method, ILGenerator il, int defaultTtl)
         {
             Ldarg(il, method.Value + 1);
 
@@ -267,7 +391,7 @@ namespace NetCache
                 method.Method.GetParameters()[method.Value].ParameterType);
         }
 
-        private static void BuildRemove(CacheMethod method, ILGenerator il)
+        private void BuildRemove(CacheMethod method, ILGenerator il)
         {
             var locals = 0;
             if (InitValue<CancellationToken>(method.CancellationToken, il, locals)) locals++;
@@ -275,21 +399,30 @@ namespace NetCache
             BuildCacheMethod(method, locals, il, nameof(CacheHelper.Remove), method.Method.GetParameters()[0].ParameterType);
         }
 
-        private static void BuildCacheMethod(CacheMethod method, int locals, ILGenerator il,
+        private void BuildCacheMethod(CacheMethod method, int locals, ILGenerator il,
             string methodName, params Type[] typeArguments)
         {
             if (method.WarpedValue) methodName += "2";
 
             if (method.AsyncType == null)
             {
+#if BuildTask
+                il.Emit(OpCodes.Callvirt, GetCacheMethod(methodName, typeArguments));
+
+                if (method.Method.ReturnType.IsType(typeof(void))) il.Emit(OpCodes.Pop);
+#else
                 il.Emit(OpCodes.Callvirt, CacheHelperMethods[methodName].MakeGenericMethod(typeArguments));
 
                 if (method.Method.ReturnType == typeof(void)) il.Emit(OpCodes.Pop);
+#endif
             }
             else
             {
+#if BuildTask
+                il.Emit(OpCodes.Callvirt, GetCacheMethod(methodName + "Async", typeArguments));
+#else
                 il.Emit(OpCodes.Callvirt, CacheHelperMethods[methodName + "Async"].MakeGenericMethod(typeArguments));
-
+#endif
                 Cast(il, method, locals);
             }
         }
@@ -309,6 +442,7 @@ namespace NetCache
             else
                 il.Emit(OpCodes.Ldarg, index);
         }
+
         private static void Ldloc(ILGenerator il, int index)
         {
             if (index == 0)
@@ -324,6 +458,7 @@ namespace NetCache
             else
                 il.Emit(OpCodes.Ldloc, index);
         }
+
         private static void Ldloca(ILGenerator il, int index)
         {
             if (index <= 255)
@@ -331,6 +466,7 @@ namespace NetCache
             else
                 il.Emit(OpCodes.Ldloca, index);
         }
+
         private static void Ldc(ILGenerator il, int index)
         {
             if (index == -1)
@@ -358,6 +494,7 @@ namespace NetCache
             else
                 il.Emit(OpCodes.Ldc_I4, index);
         }
+
         private static void Stloc(ILGenerator il, int index)
         {
             if (index == 0)
@@ -374,7 +511,7 @@ namespace NetCache
                 il.Emit(OpCodes.Stloc, index);
         }
 
-        private static bool LdTtl(CacheMethod method, ILGenerator il, int locals, int defaultTtl)
+        private bool LdTtl(CacheMethod method, ILGenerator il, int locals, int defaultTtl)
         {
             if (method.Ttl < 1)
             {
@@ -385,41 +522,55 @@ namespace NetCache
             else
             {
                 var type = method.Method.GetParameters()[method.Ttl].ParameterType;
+#if BuildTask
+                var rawType = type.GetUnderlyingType();
+#else
                 var rawType = Nullable.GetUnderlyingType(type);
-
+#endif
                 if (rawType == null) Ldarg(il, method.Ttl + 1);
-                else il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
-
+                else il.Emit(OpCodes.Ldarga_S, (byte)(method.Ttl + 1));
+#if BuildTask
+                if (type.IsType<DateTime>() ||
+                    type.IsType<DateTimeOffset>())
+#else
                 if (type == typeof(DateTime) ||
                     type == typeof(DateTimeOffset))
+#endif
                 {
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(DateTime.Now))!.GetMethod);
+                    il.Emit(OpCodes.Call, type.GetGetMethod(nameof(DateTime.Now))!);
+#if BuildTask
+                    il.Emit(OpCodes.Call, type.GetMethod(m => m.Name == "op_Subtraction" && m.ReturnType.IsType<TimeSpan>())!);
+#else
                     il.Emit(OpCodes.Call, type.GetMethod("op_Subtraction", new[] { type, type })!);
-
+#endif
                     return false;
                 }
-
+#if BuildTask
+                if (rawType != null && (rawType.IsType<DateTime>() || rawType.IsType<DateTimeOffset>()))
+#else
                 if (rawType == typeof(DateTime) ||
                     rawType == typeof(DateTimeOffset))
+#endif
                 {
                     var falseLabel = il.DefineLabel();
                     var endLabel = il.DefineLabel();
 
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.HasValue))!.GetMethod);
+                    il.Emit(OpCodes.Call, type.GetGetMethod(nameof(Nullable<TimeSpan>.HasValue))!);
                     il.Emit(OpCodes.Brfalse_S, falseLabel);
 
-                    il.Emit(OpCodes.Ldarga_S, method.Ttl + 1);
-                    il.Emit(OpCodes.Call, type.GetProperty(nameof(Nullable<TimeSpan>.Value))!.GetMethod);
+                    il.Emit(OpCodes.Ldarga_S, (byte)(method.Ttl + 1));
+                    il.Emit(OpCodes.Call, type.GetGetMethod(nameof(Nullable<TimeSpan>.Value))!);
 
-                    il.Emit(OpCodes.Call, rawType.GetProperty(nameof(DateTime.Now))!.GetMethod);
+                    il.Emit(OpCodes.Call, rawType.GetGetMethod(nameof(DateTime.Now))!);
+#if BuildTask
+                    il.Emit(OpCodes.Call, rawType.GetMethod(m => m.Name == "op_Subtraction" && m.ReturnType.IsType<TimeSpan>())!);
+#else
                     il.Emit(OpCodes.Call, rawType.GetMethod("op_Subtraction", new[] { rawType, rawType })!);
+#endif
                     il.Emit(OpCodes.Br_S, endLabel);
 
                     il.MarkLabel(falseLabel);
-                    il.DeclareLocal(typeof(TimeSpan));
-                    Ldloca(il, locals);
-                    il.Emit(OpCodes.Initobj, typeof(TimeSpan));
-                    Ldloc(il, locals);
+                    InitValue<TimeSpan>(-1, il, locals);
                     il.MarkLabel(endLabel);
 
                     return true;
@@ -427,6 +578,19 @@ namespace NetCache
 
                 if (rawType != null)
                     il.Emit(OpCodes.Call,
+#if BuildTask
+                        Module.ImportReference(type.GetMethod("GetValueOrDefault")));
+
+                if ((rawType ?? type).IsType<TimeSpan>()) return false;
+
+                if (!(rawType ?? type).IsType<double>())
+                {
+                    if ((rawType ?? type).IsType<uint>() || (rawType ?? type).IsType<ulong>())
+                        il.Emit(OpCodes.Conv_R_Un);
+                    else if ((rawType ?? type).IsType<decimal>())
+                        il.Emit(OpCodes.Call, Module.ImportReference(Module.ImportReference(typeof(decimal))
+                            .GetMethod(m => m.Name == "op_Explicit" && m.ReturnType.IsType<double>())));
+#else
                         type.GetMethod(nameof(Nullable<TimeSpan>.GetValueOrDefault),
 #if NET45
                             new Type[0])!);
@@ -444,17 +608,19 @@ namespace NetCache
                         il.Emit(OpCodes.Call, typeof(decimal).GetMethods(BindingFlags.Public | BindingFlags.Static)
                             .First(m => m.Name == "op_Explicit" &&
                                         m.ReturnType == typeof(double)));
-
+#endif
                     il.Emit(OpCodes.Conv_R8);
                 }
             }
-
+#if BuildTask
+            il.Emit(OpCodes.Call, _interface.Type.Module.ImportReference(typeof(TimeSpan).GetMethod(nameof(TimeSpan.FromSeconds), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!));
+#else
             il.Emit(OpCodes.Call, typeof(TimeSpan).GetMethod(nameof(TimeSpan.FromSeconds))!);
-
+#endif
             return false;
         }
 
-        private static bool InitValue<T>(int index, ILGenerator il, int locals) where T : struct
+        private bool InitValue<T>(int index, ILGenerator il, int locals) where T : struct
         {
             if (index > 0) Ldarg(il, index + 1);
             else
@@ -462,49 +628,58 @@ namespace NetCache
                 il.DeclareLocal(typeof(T));
 
                 Ldloca(il, locals);
-
+#if BuildTask
+                il.Emit(OpCodes.Initobj, ImportType<T>());
+#else
                 il.Emit(OpCodes.Initobj, typeof(T));
-
+#endif
                 Ldloc(il, locals);
             }
 
             return index < 1;
         }
 
-        private static void Cast(ILGenerator il, CacheMethod method, int locals)
+        private void Cast(ILGenerator il, CacheMethod method, int locals)
         {
             if (method.AsyncType == null) return;
+#if BuildTask
+            var returnType = (method.RawType ?? method.ValueType).IsType(typeof(void)) ? ImportType<ValueTask>() : ImportType(typeof(ValueTask<>)).MakeGenericInstanceType(method.RawType ?? method.ValueType);
 
+            if (returnType.IsType(method.Method.ReturnType) && !(method.Method.ReturnType.IsType<ValueTask>() && method.RawType != null)) return;
+#else
             var returnType = (method.RawType ?? method.ValueType) == typeof(void) ? typeof(ValueTask) : typeof(ValueTask<>).MakeGenericType(method.RawType ?? method.ValueType);
 
             if (returnType == method.Method.ReturnType && !(method.Method.ReturnType == typeof(ValueTask) && method.RawType != null)) return;
-
+#endif
             il.DeclareLocal(returnType);
 
             Stloc(il, locals);
 
             Ldloca(il, locals);
-
+#if BuildTask
+            if (method.Method.ReturnType.IsType<ValueTask>())
+#else
             if (method.Method.ReturnType == typeof(ValueTask))
+#endif
             {
                 var trueLabel = il.DefineLabel();
                 var endLabel = il.DefineLabel();
                 var endLabel2 = il.DefineLabel();
 
-                il.Emit(OpCodes.Call, returnType.GetProperty(nameof(ValueTask.IsCompletedSuccessfully))!.GetMethod);
+                il.Emit(OpCodes.Call, returnType.GetGetMethod(nameof(ValueTask.IsCompletedSuccessfully))!);
                 il.Emit(OpCodes.Brtrue_S, trueLabel);
 
                 Ldloca(il, locals);
                 il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
+#if BuildTask
+                il.Emit(OpCodes.Newobj, Module.ImportReference(typeof(ValueTask).GetConstructor(new[] { typeof(Task) })!));
+#else
                 il.Emit(OpCodes.Newobj, typeof(ValueTask).GetConstructor(new[] { typeof(Task) })!);
-
+#endif
                 il.Emit(OpCodes.Br_S, endLabel);
 
                 il.MarkLabel(trueLabel);
-                il.DeclareLocal(typeof(ValueTask));
-                Ldloca(il, ++locals);
-                il.Emit(OpCodes.Initobj, typeof(ValueTask));
-                Ldloc(il, locals);
+                InitValue<ValueTask>(-1, il, ++locals);
 
                 il.MarkLabel(endLabel);
                 il.DeclareLocal(typeof(ValueTask));
@@ -519,5 +694,17 @@ namespace NetCache
                 il.Emit(OpCodes.Call, returnType.GetMethod(nameof(ValueTask.AsTask))!);
             }
         }
+#if BuildTask
+        private MethodInfo GetCacheMethod(string name, params Type[] typeArguments)
+        {
+            if (typeArguments.Length < 1) return _cacheHelperMethods[name];
+
+            var m = new GenericInstanceMethod(_cacheHelperMethods[name]);
+
+            foreach (var arg in typeArguments) m.GenericArguments.Add(arg);
+
+            return m;
+        }
+#endif
     }
 }

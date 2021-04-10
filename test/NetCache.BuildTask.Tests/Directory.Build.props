@@ -1,0 +1,9 @@
+﻿<Project>
+
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <RumtimeFrameworks>net472;netcoreapp2.1;netcoreapp3.1</RumtimeFrameworks>
+  </PropertyGroup>
+
+</Project>

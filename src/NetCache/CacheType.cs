@@ -3,7 +3,13 @@ using System.Collections.Generic;
 
 namespace NetCache
 {
+#if BuildTask
+    using Type = Mono.Cecil.TypeDefinition;
+
     public class CacheType
+#else
+    internal class CacheType
+#endif
     {
         public CacheType(string name, Type type, IReadOnlyList<CacheMethod> methods)
         {

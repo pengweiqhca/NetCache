@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="1.*" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'" />
+    <PackageReference Include="MessagePack" Version="2.1.90" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'" />
+
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
+  </ItemGroup>
+
+</Project>

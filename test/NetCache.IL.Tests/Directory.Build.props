@@ -1,0 +1,10 @@
+﻿<Project>
+
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <RumtimeFrameworks>netcoreapp3.1;net472;</RumtimeFrameworks>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+
+</Project>

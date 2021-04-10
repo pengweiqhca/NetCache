@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--<PackageReference Include="Microsoft.Build.Framework" Version="16.*" />
+    <PackageReference Include="Microsoft.Build.Runtime" Version="16.*" />-->
+
+    <ProjectReference Include="..\..\src\NetCache.BuildTask\NetCache.BuildTask.csproj" />
+
+    <ProjectReference Include="..\..\src\NetCache.Core\NetCache.Core.csproj" />
+
+    <ProjectReference Include="..\NetCache.Tests\NetCache.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

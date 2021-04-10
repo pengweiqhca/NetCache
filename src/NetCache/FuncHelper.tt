@@ -7,12 +7,20 @@
 <#@ include file="../NetCache/FuncHelper.Class.tt"#>
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+#if BuildTask
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
+using MethodBuilder = Mono.Cecil.MethodDefinition;
+using ModuleBuilder = Mono.Cecil.ModuleDefinition;
+using Type = Mono.Cecil.TypeReference;
+#else
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
-
+#endif
 namespace NetCache
 {
     internal partial class FuncHelper
@@ -20,8 +28,8 @@ namespace NetCache
 <#  var parameters = new Dictionary<string, string>
     {
         { "key", "1" },
-        { "typeof(TimeSpan)", "2" },
-        { "typeof(CancellationToken)", "3" },
+        { "timeSpanType", "2" },
+        { "cancellationTokenType", "3" },
     };
     var parameterTypes = parameters.Keys.ToArray();
     var funcs = Enumerable.Range(1, parameterTypes.Length)
@@ -48,60 +56,103 @@ namespace NetCache
         .ToArray(); #>
         private Type CreateType(ModuleBuilder module)
         {
-            var proxy = module.GetType("NetCache.FuncAdapter@");
-            if (proxy != null) throw new InvalidOperationException("TYpe 'NetCache.FuncAdapter@' has exits.");
-
-            var adapter = module.DefineType("NetCache.FuncAdapter@", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed, typeof(object));
+            var proxy = module.GetType("NetCache.FuncAdapter@`2");
+            if (proxy != null) throw new InvalidOperationException("Type 'NetCache.FuncAdapter@`2' has exits.");
+#if BuildTask
+            var objectType = module.TypeSystem.Object;
+            var timeSpanType = module.ImportReference(typeof(TimeSpan));
+            var cancellationTokenType = module.ImportReference(typeof(CancellationToken));
+            var taskType = module.ImportReference(typeof(Task<>));
+            var valueTaskType = module.ImportReference(typeof(ValueTask<>));
+#else
+            var objectType = typeof(object);
+            var timeSpanType = typeof(TimeSpan);
+            var cancellationTokenType = typeof(CancellationToken);
+            var taskType = typeof(Task<>);
+            var valueTaskType = typeof(ValueTask<>);
+#endif
+            var adapter = module.DefineType("NetCache.FuncAdapter@`2", TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed, objectType);
 
             var gp = adapter.DefineGenericParameters("TK", "TV");
 
-            var func = adapter.DefineField("_func", typeof(object), FieldAttributes.Private);
-
-            var ctor = adapter.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, new[] { typeof(object) });
-
+            var func = adapter.DefineField("_func", objectType, FieldAttributes.Private);
+#if BuildTask
+            var ctor = adapter.DefineMethod(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, module.TypeSystem.Void, new TypeReference[] { objectType });
+#else
+            var ctor = adapter.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.HasThis, new[] { objectType });
+#endif
             ctor.DefineParameter(1, ParameterAttributes.None, "func");
-
+#if BuildTask
             var il = ctor.GetILGenerator();
-
+#else
+            var il = ctor.GetILGenerator();
+#endif
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Call, typeof(object).GetConstructors().First());
+#if BuildTask
+            il.Emit(OpCodes.Call, module.ImportReference(typeof(object).GetConstructors()[0]));
+#else
+            il.Emit(OpCodes.Call, objectType.GetConstructors().First());
+#endif
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Stfld, func);
             il.Emit(OpCodes.Ret);
 
             MethodBuilder am;
+#if BuildTask
+            var key = gp[0].GetElementType();
+            var value = gp[1].GetElementType();
+
+            var taskReturnType = module.ImportReference(taskType.MakeGenericInstanceType(value));
+            var valueTaskReturnType = module.ImportReference(valueTaskType.MakeGenericInstanceType(value));
+
+            var syncCtor = module.ImportReference(valueTaskType.Resolve().GetConstructors().First(c => !c.Parameters[0].ParameterType.Name.Contains("Task`1")));
+            var asyncCtor = module.ImportReference(valueTaskType.Resolve().GetConstructors().First(c => c.Parameters[0].ParameterType.Name.Contains("Task`1")));
+
+            var invoke0 = module.ImportReference(typeof(Func<>).GetMethod("Invoke"));
+            var invoke1 = module.ImportReference(typeof(Func<,>).GetMethod("Invoke"));
+            var invoke2 = module.ImportReference(typeof(Func<,,>).GetMethod("Invoke"));
+            var invoke3 = module.ImportReference(typeof(Func<,,,>).GetMethod("Invoke"));
+#else
             var key = gp[0].UnderlyingSystemType;
+            var value = gp[1].UnderlyingSystemType;
 
             var aggressiveInlining = new CustomAttributeBuilder(typeof(MethodImplAttribute).GetConstructor(new[] { typeof(MethodImplOptions) }), new object[] { MethodImplOptions.AggressiveInlining });
 
-            var taskReturnType = typeof(Task<>).MakeGenericType(gp[1].UnderlyingSystemType);
-            var valueTaskReturnType = typeof(ValueTask<>).MakeGenericType(gp[1].UnderlyingSystemType);
+            var taskReturnType = taskType.MakeGenericType(value);
+            var valueTaskReturnType = valueTaskType.MakeGenericType(value);
 
-            var syncCtor = typeof(ValueTask<>).GetConstructors().First(c => !c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
-            var asyncCtor = typeof(ValueTask<>).GetConstructors().First(c => c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
+            var syncCtor = valueTaskType.GetConstructors().First(c => !c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
+            var asyncCtor = valueTaskType.GetConstructors().First(c => c.GetParameters()[0].ParameterType.Name.Contains("Task`1"));
 
             var invoke0 = typeof(Func<>).GetMethod("Invoke");
             var invoke1 = typeof(Func<,>).GetMethod("Invoke");
             var invoke2 = typeof(Func<,,>).GetMethod("Invoke");
             var invoke3 = typeof(Func<,,,>).GetMethod("Invoke");
+#endif
 
 <#  for (var j = 0; j < 4; j++)
     for (var index = 0; index < funcs.Length; index++)
     { #>
-            am = adapter.DefineMethod("Wrap<#= index + funcs.Length * j #>", MethodAttributes.Public | MethodAttributes.HideBySig, <#= j < 1 ? "gp[1].UnderlyingSystemType" : "valueTaskReturnType" #>, new [] { key, typeof(TimeSpan), typeof(CancellationToken) });
+            am = adapter.DefineMethod("Wrap<#= index + funcs.Length * j #>", MethodAttributes.Public | MethodAttributes.HideBySig, <#= j < 1 ? "value" : "valueTaskReturnType" #>, new [] { key, timeSpanType, cancellationTokenType });
 
             am.DefineParameter(1, ParameterAttributes.None, "key");
             am.DefineParameter(2, ParameterAttributes.None, "expiry");
             am.DefineParameter(3, ParameterAttributes.None, "cancellationToken");
-
-            am.SetCustomAttribute(aggressiveInlining);
-
+#if BuildTask
+            am.AggressiveInlining = true;
             il = am.GetILGenerator();
-
+#else
+            am.SetCustomAttribute(aggressiveInlining);
+            il = am.GetILGenerator();
+#endif
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, func);
-            il.Emit(OpCodes.Castclass, typeof(Func<<#= new String(',', funcs[index].Length) #>>).MakeGenericType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "gp[1].UnderlyingSystemType" : (j < 3 ? "taskReturnType" : "valueTaskReturnType") })) #>));
+#if BuildTask
+            il.Emit(OpCodes.Castclass, module.ImportReference(typeof(Func<<#= new String(',', funcs[index].Length) #>>)).MakeGenericInstanceType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "value" : (j < 3 ? "taskReturnType" : "valueTaskReturnType") })) #>));
+#else
+            il.Emit(OpCodes.Castclass, typeof(Func<<#= new String(',', funcs[index].Length) #>>).MakeGenericType(<#= string.Join(", ", funcs[index].Union(new [] { j < 2 ? "value" : (j < 3 ? "taskReturnType" : "valueTaskReturnType") })) #>));
+#endif
 <# foreach (var p in funcs[index])
 { #>
             il.Emit(OpCodes.Ldarg_<#= parameters[p] #>);
@@ -117,31 +168,12 @@ else if (j == 2)
 <# } #>
             il.Emit(OpCodes.Ret);
 
-<# if (j == 0)
-{ #>
-            _wrapMethods[new FuncType
-<# }
-else
-{ #>
-            _wrapAsyncMethods[new FuncType
-<# } #>
-            {
-<#  for (var i = 1; i <= funcs[index].Length; i++)
-    { #>
-                Arg<#= i #> = <#= funcs[index][i - 1] == "key" ? "typeof(object)" : funcs[index][i - 1] #>,
-<# } #>
-<# if (j == 2)
-{ #>
-                ReturnArg = typeof(Task<>),
-<# }
-else if (j == 3)
-{ #>
-                ReturnArg = typeof(ValueTask<>),
-<# } #>
-            }] = <#= index + funcs.Length * j #>;
+            _wrapMethods[<#= j == 0 ? "-" : "" #>GetIndex(<#  for (var i = 0; i < 3; i++) { #><#= i < funcs[index].Length ? funcs[index][i] == "key" ? "objectType" : funcs[index][i] : "null" #>,<# } #><#= j == 2 ? "taskType" : j == 3 ? "valueTaskType" : "null" #>)] = am;
 
 <# } #>
-#if NETSTANDARD2_0
+#if BuildTask
+            return adapter;
+#elif NETSTANDARD2_0
             return adapter.CreateTypeInfo()!;
 #else
             return adapter.CreateType()!;

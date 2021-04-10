@@ -1,13 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <NoWarn>$(NoWarn);IDE0060</NoWarn>
     <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.*" Condition="'$(TargetFramework)' != 'netcoreapp2.1'" />
-
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.*" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" Condition="'$(TargetFramework)' != 'net46'" />
 

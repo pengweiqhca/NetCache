@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
+    <NetCacheTaskDirectory Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">$(MSBuildThisFileDirectory)..\..\src\NetCache.BuildTask\bin\Debug\net45\publish</NetCacheTaskDirectory>
+    <NetCacheTaskDirectory Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">$(MSBuildThisFileDirectory)..\..\src\NetCache.BuildTask\bin\Debug\netcoreapp2.1\publish</NetCacheTaskDirectory>
+    <ProxyCreateMode>BuildTask</ProxyCreateMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../test/NetCache.Tests/TestHelpers/Int64Cache.cs" />
+    <Compile Include="../NetCache.Demo/Program.cs" />
+
+    <ProjectReference Include="..\..\src\NetCache\NetCache.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.MicrosoftExtensionsCaching\NetCache.MicrosoftExtensionsCaching.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.*" />
+
+    <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net46'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsPackageVersion)" />
+
+    <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" />
+  </ItemGroup>
+
+  <Import Project="$(NetCacheTaskDirectory)\NetCache.BuildTask.targets" />
+
+</Project>

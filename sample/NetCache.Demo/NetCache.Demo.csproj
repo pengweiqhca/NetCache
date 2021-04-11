@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <SignAssembly>false</SignAssembly>
     <TargetFrameworks>$(RumtimeFrameworks)</TargetFrameworks>
   </PropertyGroup>
 

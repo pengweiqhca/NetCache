@@ -1,19 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project>
 
   <PropertyGroup>
-    <CustomTasksAssembly>$(MSBuildThisFileDirectory)\$(MSBuildThisFileName).dll</CustomTasksAssembly>
+    <NetCacheTaskRuntime Condition="'$(MSBuildRuntimeType)' == 'Core'">netstandard2.0</NetCacheTaskRuntime>
+    <NetCacheTaskRuntime Condition="'$(MSBuildRuntimeType)' != 'Core'">net45</NetCacheTaskRuntime>
+    <NetCacheTaskDirectory Condition="'$(NetCacheTaskDirectory)' == ''">$(MSBuildThisFileDirectory)..\buildtask\$(NetCacheTaskRuntime)</NetCacheTaskDirectory>
+    <NetCacheTaskAssembly>$(NetCacheTaskDirectory)\NetCache.BuildTask.dll</NetCacheTaskAssembly>
   </PropertyGroup>
 
-  <UsingTask TaskName="GenerateProxyTask" AssemblyFile="$(CustomTasksAssembly)"/>
+  <UsingTask TaskName="NetCache.ProxyTask" AssemblyFile="$(NetCacheTaskAssembly)"/>
 
-  <Target Name="GenerateProxy"
-          BeforeTargets="AfterCompile"
-          Condition="Exists(@(IntermediateAssembly)) And $(DesignTimeBuild) != true And $(DisableFody) != true"
-          Inputs="@(IntermediateAssembly)">
-    <GenerateProxyTask TargetAssembly="@(IntermediateAssembly)" />
-    <!--    <Warning Text="Parameter: $(ResultParameter)" />-->
-    <!--    <Warning Text="Items: @(ResultItems)" />-->
+  <Target Name="GenerateProxy" AfterTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences;ResolveAssemblyReferences" Condition="$(DesignTimeBuild) != true AND $(ProxyCreateMode) == 'BuildTask'">
+    <NetCache.ProxyTask TargetAssembly="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)$(TargetFileName)" References="@(_ResolveAssemblyReferenceResolvedFiles)" />
   </Target>
 
 </Project>

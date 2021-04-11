@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 #if BuildTask
-using Mono.Cecil;
 using MethodInfo = Mono.Cecil.MethodReference;
 using ModuleBuilder = Mono.Cecil.ModuleDefinition;
 using Type = Mono.Cecil.TypeReference;

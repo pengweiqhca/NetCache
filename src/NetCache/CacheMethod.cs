@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace NetCache
@@ -11,6 +10,8 @@ namespace NetCache
 
     public class CacheMethod
 #else
+    using System.Reflection;
+
     internal class CacheMethod
 #endif
     {

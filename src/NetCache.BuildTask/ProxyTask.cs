@@ -42,7 +42,6 @@ namespace NetCache
 
             try
             {
-                //https://github.com/dotnetcore/NetCache/blob/NetCache.JITAOT/NetCache.BuildTask
                 using var assembly = new CacheAssembly(TargetAssembly, GetSearchDirectories().Distinct(), logger, true, true);
 
                 assembly.WriteProxyTypes();

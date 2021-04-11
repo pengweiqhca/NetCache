@@ -151,7 +151,7 @@ namespace Mono.Cecil
             return method;
         }
 
-        public static Collection<TypeReference> GetGenericArguments(this TypeReference type) => ((GenericInstanceType)type).GenericArguments;
+        public static TypeReference[] GetGenericArguments(this TypeReference type) => ((GenericInstanceType)type).GenericArguments.ToArray();
 
         public static ParameterDefinition DefineParameter(this MethodDefinition method, int position, ParameterAttributes attributes, string name)
         {

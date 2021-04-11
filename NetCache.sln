@@ -67,6 +67,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.BuildTask.Tests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCache.IL.Tests", "test\NetCache.IL.Tests\NetCache.IL.Tests.csproj", "{54CABC68-FE68-4B69-A5FE-46736D6CF166}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCache.BuildTask.Demo", "sample\NetCache.BuildTask.Demo\NetCache.BuildTask.Demo.csproj", "{D21631F7-05AF-4D96-98DC-5A95B709FBF5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,6 +151,10 @@ Global
 		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54CABC68-FE68-4B69-A5FE-46736D6CF166}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D21631F7-05AF-4D96-98DC-5A95B709FBF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D21631F7-05AF-4D96-98DC-5A95B709FBF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D21631F7-05AF-4D96-98DC-5A95B709FBF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D21631F7-05AF-4D96-98DC-5A95B709FBF5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -173,6 +179,7 @@ Global
 		{5D890E44-5D1B-42F8-BEFC-2D27B4501FCC} = {77EC9A60-184C-49BC-9ABA-5A642C4ABAD0}
 		{EDAB39FA-69DA-4BCF-A019-2BCB495EE4B0} = {DCB1A2D3-D037-4C22-9B41-038CA46F035C}
 		{54CABC68-FE68-4B69-A5FE-46736D6CF166} = {DCB1A2D3-D037-4C22-9B41-038CA46F035C}
+		{D21631F7-05AF-4D96-98DC-5A95B709FBF5} = {9B27A2B2-43ED-4E30-9CB7-902581FE25E0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B8D6CA4C-0173-4E1F-A7F2-5EBE9EB6108A}

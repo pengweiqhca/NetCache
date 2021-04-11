@@ -328,14 +328,14 @@ namespace NetCache
 
             Type? arg1 = null, arg2 = null, arg3 = null, returnArg = null;
 #if BuildTask
-            if (args.Count > 1) arg1 = args[0] == keyType ? TypeSystem.Object : args[0];
-            if (args.Count > 2) arg2 = args[1] == keyType ? TypeSystem.Object : args[1];
-            if (args.Count > 3) arg3 = args[2] == keyType ? TypeSystem.Object : args[2];
-            if (args.Count > 4) throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method);
+            if (args.Length > 1) arg1 = args[0] == keyType ? TypeSystem.Object : args[0];
+            if (args.Length > 2) arg2 = args[1] == keyType ? TypeSystem.Object : args[1];
+            if (args.Length > 3) arg3 = args[2] == keyType ? TypeSystem.Object : args[2];
+            if (args.Length > 4) throw CacheTypeResolver.ParameterException(method.Method.DeclaringType!, method.Method);
 
-            if (args[args.Count - 1].IsGenericInstance)
+            if (args[args.Length - 1].IsGenericInstance)
             {
-                var type = args[args.Count - 1].GetElementType();
+                var type = args[args.Length - 1].GetElementType();
 
                 if (type.IsType(typeof(Task<>)) || type.IsType(typeof(ValueTask<>))) returnArg = type;
             }
@@ -347,7 +347,7 @@ namespace NetCache
 
             var fat = _helper.FuncAdapterType.MakeGenericInstanceType(keyType, method.ValueType);
 
-            il.Emit(OpCodes.Newobj, new MethodReference(".ctor", TypeSystem.Void, fat) { Parameters = { new ParameterDefinition(TypeSystem.Object) }, HasThis = true });
+            il.Emit(OpCodes.Newobj, new MethodInfo(".ctor", TypeSystem.Void, fat) { Parameters = { new ParameterBuilder(TypeSystem.Object) }, HasThis = true });
             il.Emit(OpCodes.Ldftn, Module.ImportReference(_helper.GetWrapMethod(method.AsyncType == null, arg1, arg2, arg3, returnArg)).CopyTo(fat));
             il.Emit(OpCodes.Newobj, Module.ImportReference(typeof(Func<,,,>).GetConstructors()[0]).CopyTo(ImportType(typeof(Func<,,,>)).MakeGenericInstanceType(keyType.GetElementType(), ImportType<TimeSpan>(), ImportType<CancellationToken>(), method.AsyncType == null ? method.ValueType : ImportType(typeof(ValueTask<>)).MakeGenericInstanceType(method.ValueType.GetElementType()))));
 #else

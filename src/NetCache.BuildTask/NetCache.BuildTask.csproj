@@ -12,14 +12,15 @@
       </_Parameter1>
     </AssemblyAttribute>
 
-    <Compile Include="..\NetCache\CacheMethod.cs" Link="OuterTypes\CacheMethod.cs" />
+    <Compile Include="..\NetCache\CacheMethod.cs" Link="CacheMethod.cs" />
     <Compile Include="..\NetCache\CacheProxyGenerator.cs" Link="CacheProxyType.cs" />
-    <Compile Include="..\NetCache\CacheType.cs" Link="OuterTypes\CacheType.cs" />
-    <Compile Include="..\NetCache\FuncHelper.cs" Link="OuterTypes\FuncHelper.cs" />
-    <Compile Include="..\NetCache\FuncHelper.generated.cs" Link="OuterTypes\FuncHelper.generated.cs" />
+    <Compile Include="..\NetCache\CacheType.cs" Link="CacheType.cs" />
+    <Compile Include="..\NetCache\CacheTypeResolver.cs" Link="CacheTypeResolver.cs" />
+    <Compile Include="..\NetCache\FuncHelper.cs" Link="FuncHelper.cs" />
+    <Compile Include="..\NetCache\FuncHelper.generated.cs" Link="FuncHelper.generated.cs" />
 
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="14.3.0" PrivateAssets="all" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="14.*" PrivateAssets="all" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" PrivateAssets="all" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
 
     <Content Include="NetCache.BuildTask.targets">

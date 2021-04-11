@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace NetCache
 {
@@ -8,6 +7,8 @@ namespace NetCache
 
     public class CacheType
 #else
+    using System;
+
     internal class CacheType
 #endif
     {

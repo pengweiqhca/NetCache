@@ -19,23 +19,14 @@
     <Compile Include="..\NetCache\FuncHelper.cs" Link="FuncHelper.cs" />
     <Compile Include="..\NetCache\FuncHelper.generated.cs" Link="FuncHelper.generated.cs" />
 
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="14.*" PrivateAssets="all" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" PrivateAssets="all" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="14.*" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-
-    <Content Include="NetCache.BuildTask.targets">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
     <ProjectReference Include="..\NetCache\NetCache.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

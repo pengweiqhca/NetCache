@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;net461;netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>1.1.0.0</Version>
+    <Version>1.2.0.0</Version>
     <T4Filename>FuncHelper.tt</T4Filename>
   </PropertyGroup>
 
@@ -68,5 +68,28 @@
   <Target Name="TextTemplateClean" AfterTargets="Clean">
     <Delete Files="@(Generated)" Condition="$(T4Filename) != ''" />
   </Target>
+
+  <ItemGroup>
+    <None Include="..\NetCache.BuildTask\NetCache.targets" PackagePath="build\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\NetCache.targets" PackagePath="build\net461" Pack="true" />
+    <None Include="..\NetCache.BuildTask\NetCache.targets" PackagePath="build\netstandard2.0" Pack="true" />
+    <None Include="..\NetCache.BuildTask\NetCache.targets" PackagePath="build\netstandard2.1" Pack="true" />
+
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\Mono.Cecil.dll" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\Mono.Cecil.Mdb.dll" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\Mono.Cecil.Pdb.dll" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\Mono.Cecil.Rocks.dll" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\NetCache.BuildTask.deps.json" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\NetCache.BuildTask.dll" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\netcoreapp2.1\publish\NetCache.BuildTask.pdb" PackagePath="build\buildtask\netcoreapp2.1" Pack="true" />
+
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\Mono.Cecil.dll" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\Mono.Cecil.Mdb.dll" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\Mono.Cecil.Pdb.dll" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\Mono.Cecil.Rocks.dll" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\NetCache.BuildTask.dll" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\NetCache.BuildTask.pdb" PackagePath="build\buildtask\net45" Pack="true" />
+    <None Include="..\NetCache.BuildTask\bin\Release\net45\publish\System.Threading.Tasks.Extensions.dll" PackagePath="build\buildtask\net45" Pack="true" />
+  </ItemGroup>
 
 </Project>

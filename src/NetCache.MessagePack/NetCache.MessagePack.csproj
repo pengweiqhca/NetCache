@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="1.*" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'" />
-    <PackageReference Include="MessagePack" Version="2.1.90" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'" />
+    <PackageReference Include="MessagePack" Version="1.*" Condition="'$(TargetFramework)' == 'net45'" />
+    <PackageReference Include="MessagePack" Version="2.1.90" Condition="'$(TargetFramework)' != 'net45'" />
 
     <ProjectReference Include="..\NetCache.Core\NetCache.Core.csproj" />
   </ItemGroup>

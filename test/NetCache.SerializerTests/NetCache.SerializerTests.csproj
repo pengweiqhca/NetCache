@@ -10,13 +10,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <None Remove="MyContracts.proto" />
-    <Protobuf Include="MyContracts.proto" />
+    <Protobuf Include="MyContracts.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.*" />
     <ProjectReference Include="..\..\src\NetCache.GoogleProtobuf\NetCache.GoogleProtobuf.csproj" />
+    <ProjectReference Include="..\..\src\NetCache.MessagePack\NetCache.MessagePack.csproj" />
     <ProjectReference Include="..\..\src\NetCache.NewtonsoftJson\NetCache.NewtonsoftJson.csproj" />
     <ProjectReference Include="..\..\src\NetCache.ProtobufNet\NetCache.ProtobufNet.csproj" />
     <ProjectReference Include="..\..\src\NetCache.SystemTextJson\NetCache.SystemTextJson.csproj" Condition="'$(TargetFramework)' != 'net46'" />

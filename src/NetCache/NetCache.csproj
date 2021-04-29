@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>net45;net461;netstandard2.0;netstandard2.1</TargetFrameworks>
     <Version>1.2.0.0</Version>
-    <T4Filename>FuncHelper.tt</T4Filename>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,10 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Generated Include="*.generated.cs"/>
-
-    <DotNetCliToolReference Include="dotnet-t4-project-tool" Version="2.*" PrivateAssets="All" />
-
     <Compile Update="FuncHelper.cs">
       <DependentUpon>FuncHelper.tt</DependentUpon>
     </Compile>
@@ -61,13 +56,30 @@
     </None>
   </ItemGroup>
 
-  <Target Name="TextTemplateTransform" BeforeTargets="BeforeBuild">
-    <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet t4 $(T4Filename)" Condition="$(T4Filename) != ''" />
+  <Target Name="_CollectTextTemplates">
+    <ItemGroup>
+      <TextTemplate Include="%(None.Identity)" Condition="'%(None.Generator)' == 'TextTemplatingFileGenerator'">
+        <LastGenOutput>%(None.LastGenOutput)</LastGenOutput>
+      </TextTemplate>
+    </ItemGroup>
   </Target>
 
-  <Target Name="TextTemplateClean" AfterTargets="Clean">
-    <Delete Files="@(Generated)" Condition="$(T4Filename) != ''" />
+  <Target Name="_TransformTextTemplate" Inputs="$(TextTemplate)" Outputs="$(TextTemplateOutput)">
+    <Exec Command="dotnet t4 -h &gt; /dev/null" IgnoreExitCode="True" Condition="'$(WINDIR)' == ''">
+      <Output TaskParameter="ExitCode" PropertyName="_TestExitCode" />
+    </Exec>
+    <Exec Command="dotnet t4 -h &gt; NUL" IgnoreExitCode="True" Condition="'$(WINDIR)' != ''">
+      <Output TaskParameter="ExitCode" PropertyName="_TestExitCode" />
+    </Exec>
+    <Exec Command="dotnet tool restore" Condition="$(_TestExitCode) != 0" />
+    <Exec Command="dotnet t4 $(TextTemplate)" />
   </Target>
+
+  <Target Name="TransformTextTemplates" DependsOnTargets="_CollectTextTemplates">
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="_TransformTextTemplate" Properties="TextTemplate=%(TextTemplate.Identity);TextTemplateOutput=%(TextTemplate.LastGenOutput)"  />
+  </Target>
+
+  <Target Name="_TransformTextTemplates" BeforeTargets="BeforeBuild" DependsOnTargets="TransformTextTemplates" />
 
   <ItemGroup>
     <None Include="..\NetCache.BuildTask\NetCache.targets" PackagePath="build\net45" Pack="true" />

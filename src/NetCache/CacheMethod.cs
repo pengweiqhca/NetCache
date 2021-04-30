@@ -7,13 +7,10 @@ namespace NetCache
     using Mono.Cecil;
     using MethodInfo = Mono.Cecil.MethodReference;
     using Type = Mono.Cecil.TypeReference;
-
-    public class CacheMethod
 #else
     using System.Reflection;
-
-    internal class CacheMethod
 #endif
+    internal class CacheMethod
     {
         public CacheMethod(MethodInfo method, CacheOperation operation)
         {

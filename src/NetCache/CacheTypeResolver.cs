@@ -28,7 +28,6 @@ namespace NetCache
             Boolean = module.GetType(typeof(bool).FullName);
         }
 #else
-        private static readonly Type Void = typeof(void);
         private static readonly Type Boolean = typeof(bool);
 #endif
         /// <exception cref="AggregateException"></exception>

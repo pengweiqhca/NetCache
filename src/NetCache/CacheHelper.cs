@@ -391,7 +391,7 @@ namespace NetCache
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var values = await mkcp.GetAsync((IEnumerable<string>)keys.Select(ParseKey), cancellationToken).ConfigureAwait(false);
+                var values = await mkcp.GetAsync(keys.Select(ParseKey), cancellationToken).ConfigureAwait(false);
 
                 if (values.Count != keys.Count)
                     throw new InvalidOperationException(string.Format(null, Res.Output_Length_Not_Match_Input_Length, values.Count, keys.Count));
@@ -502,7 +502,7 @@ namespace NetCache
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                return await mkcp.RemoveAsync((IEnumerable<string>)keys.Select(ParseKey), cancellationToken).ConfigureAwait(false);
+                return await mkcp.RemoveAsync(keys.Select(ParseKey), cancellationToken).ConfigureAwait(false);
             }
 
             var count = 0L;

@@ -8,7 +8,7 @@ namespace NetCache
     public class MemoryCacheProvider : ICacheProvider
     {
         private readonly IMemoryCache _cache;
-        private readonly object _syncObj = new object();
+        private readonly object _syncObj = new();
 
         public string Name { get; }
 
@@ -24,7 +24,7 @@ namespace NetCache
             _cache.TryGetValue<ReadOnlyMemory<byte>>(GetKey(key), out var value) ? value : default(ReadOnlyMemory<byte>?);
 
         public ValueTask<ReadOnlyMemory<byte>?> GetAsync(string key, CancellationToken cancellationToken) =>
-            new ValueTask<ReadOnlyMemory<byte>?>(Get(key, cancellationToken));
+            new(Get(key, cancellationToken));
 
         public bool Set(string key, ReadOnlyMemory<byte> value, TimeSpan expiry, When when, CancellationToken cancellationToken)
         {
@@ -46,7 +46,7 @@ namespace NetCache
         }
 
         public ValueTask<bool> SetAsync(string key, ReadOnlyMemory<byte> value, TimeSpan expiry, When when, CancellationToken cancellationToken) =>
-            new ValueTask<bool>(Set(key, value, expiry, when, cancellationToken));
+            new(Set(key, value, expiry, when, cancellationToken));
 
         public bool Remove(string key, CancellationToken cancellationToken)
         {
@@ -65,6 +65,6 @@ namespace NetCache
         }
 
         public ValueTask<bool> RemoveAsync(string key, CancellationToken cancellationToken) =>
-            new ValueTask<bool>(Remove(key, cancellationToken));
+            new(Remove(key, cancellationToken));
     }
 }

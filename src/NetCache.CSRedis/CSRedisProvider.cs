@@ -54,7 +54,7 @@ namespace NetCache
             _client.Set(GetKey(key), value.ToArray(), expiry, Convert(when));
 
         public ValueTask<bool> SetAsync(string key, ReadOnlyMemory<byte> value, TimeSpan expiry, When when, CancellationToken cancellationToken) =>
-            new ValueTask<bool>(_client.Set(GetKey(key), value.ToArray(), expiry, Convert(when)));
+            new(_client.Set(GetKey(key), value.ToArray(), expiry, Convert(when)));
 
         public bool Remove(string key, CancellationToken cancellationToken) =>
             _client.Del(GetKey(key)) > 0;
@@ -87,12 +87,12 @@ namespace NetCache
         }
 
         public ValueTask<IReadOnlyList<bool>> SetAsync(IEnumerable<KeyValuePair<string, ReadOnlyMemory<byte>>> values, TimeSpan expiry, When when, CancellationToken cancellationToken) =>
-            new ValueTask<IReadOnlyList<bool>>(Set(values, expiry, when, cancellationToken));
+            new(Set(values, expiry, when, cancellationToken));
 
         public long Remove(IEnumerable<string> keys, CancellationToken cancellationToken) =>
             _client.Del(keys.Select(GetKey).ToArray());
 
         public ValueTask<long> RemoveAsync(IEnumerable<string> keys, CancellationToken cancellationToken) =>
-            new ValueTask<long>(_client.DelAsync(keys.Select(GetKey).ToArray()));
+            new(_client.DelAsync(keys.Select(GetKey).ToArray()));
     }
 }

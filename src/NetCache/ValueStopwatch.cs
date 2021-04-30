@@ -16,7 +16,7 @@ namespace NetCache
 
         private ValueStopwatch(long startTimestamp) => _startTimestamp = startTimestamp;
 
-        public static ValueStopwatch StartNew() => new ValueStopwatch(Stopwatch.GetTimestamp());
+        public static ValueStopwatch StartNew() => new(Stopwatch.GetTimestamp());
 
         public TimeSpan GetElapsedTime()
         {

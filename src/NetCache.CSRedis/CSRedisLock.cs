@@ -9,7 +9,7 @@ namespace NetCache
 {
     public class CSRedisLock : LocalLock
     {
-        private readonly object _syncObj = new object();
+        private readonly object _syncObj = new();
         private readonly string _key;
         private readonly CSRedisClient _client;
         private readonly ILogger<CSRedisLock>? _logger;

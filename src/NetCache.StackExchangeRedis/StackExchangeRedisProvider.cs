@@ -100,6 +100,6 @@ namespace NetCache
             _database.KeyDelete(keys.Select(key => (RedisKey)key).ToArray());
 
         public ValueTask<long> RemoveAsync(IEnumerable<string> keys, CancellationToken cancellationToken) =>
-            new ValueTask<long>(_database.KeyDeleteAsync(keys.Select(key => (RedisKey)key).ToArray()));
+            new(_database.KeyDeleteAsync(keys.Select(key => (RedisKey)key).ToArray()));
     }
 }

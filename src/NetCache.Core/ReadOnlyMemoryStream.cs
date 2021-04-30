@@ -57,6 +57,6 @@ namespace NetCache
             set => throw new NotImplementedException();
         }
 
-        public ReadOnlyMemory<byte> Memory { get; private set; }
+        public ReadOnlyMemory<byte> Memory { get; }
     }
 }

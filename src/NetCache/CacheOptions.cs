@@ -40,6 +40,6 @@ namespace NetCache
         public int MaxTll { get; set; } = 30 * 24 * 60 * 60;
 
         /// <summary>ttl per name.</summary>
-        public Dictionary<string, int> Ttl { get; } = new Dictionary<string, int>();
+        public Dictionary<string, int> Ttl { get; } = new();
     }
 }

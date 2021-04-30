@@ -7,10 +7,10 @@ namespace NetCache
     public class LocalLock : IDistributedLock
     {
         private static readonly RefCounterPool<string, SemaphoreSlim> SemaphoreSlims
-            = new RefCounterPool<string, SemaphoreSlim>();
+            = new();
 
         private readonly string _key;
-        private readonly object _syncObj = new object();
+        private readonly object _syncObj = new();
 
         public LocalLock(string key) => _key = key;
 #pragma warning disable CA2213

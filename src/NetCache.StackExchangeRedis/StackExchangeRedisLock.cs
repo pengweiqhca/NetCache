@@ -9,7 +9,7 @@ namespace NetCache
 {
     public class StackExchangeRedisLock : LocalLock
     {
-        private readonly object _syncObj = new object();
+        private readonly object _syncObj = new();
         private readonly string _key;
         private readonly IDatabase _database;
         private readonly ILogger<StackExchangeRedisLock>? _logger;
@@ -41,9 +41,7 @@ namespace NetCache
                             return true;
                         }
                     }
-#pragma warning disable CA1031
                     catch (Exception ex)
-#pragma warning restore CA1031
                     {
                         _logger?.LogWarning(default, ex, ex.Message);
 
@@ -87,9 +85,7 @@ namespace NetCache
                             return true;
                         }
                     }
-#pragma warning disable CA1031
                     catch (Exception ex)
-#pragma warning restore CA1031
                     {
                         _logger?.LogWarning(default, ex, ex.Message);
 
@@ -178,9 +174,7 @@ namespace NetCache
 
                     _logger?.LogDebug($"{_key}/Ping success");
                 }
-#pragma warning disable CA1031
                 catch (Exception ex)
-#pragma warning restore CA1031
                 {
                     _logger?.LogWarning(default, ex, $"{_key}/Ping fail");
                 }
